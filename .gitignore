@@ -4,3 +4,7 @@ dist/
 .DS_Store
 .env
 .env.local
+.spec-workflow/
+.mcp.json
+docs/.next/
+docs/.source/

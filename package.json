@@ -4,20 +4,50 @@
   "description": "Enterprise-grade ontology framework — Expr AST, query engine, RBAC, SHACL validation, datasource mapping, and fluent Builder API",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typings": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
     },
     "./*": {
-      "default": "./src/*.ts"
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "require": "./dist/*.js"
     }
+  },
+  "files": ["dist", "README.md", "LICENSE", "CHANGELOG.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "format": "biome format --write src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build",
+    "docs:dev": "cd docs && bun dev",
+    "docs:build": "cd docs && bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@types/bun": "^1.3.4",
-    "typescript": "^6"
+    "typescript": "^6",
+    "vitest": "^4.1.4"
   },
   "keywords": [
     "ontology",
