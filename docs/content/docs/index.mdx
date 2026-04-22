@@ -1,0 +1,49 @@
+---
+title: Getting Started
+description: Enterprise-grade ontology framework for TypeScript
+---
+
+**@ontograph/core** lets you define entities, relations, constraints, and rules in pure TypeScript — no XML, no Turtle, no learning OWL.
+
+Inspired by [Palantir Ontology](https://docs.palantir.com/foundry/ontology/), built for the open-source world.
+
+## Why @ontograph/core?
+
+| Traditional approach | @ontograph/core |
+|---|---|
+| OWL/RDF XML configuration, steep learning curve | TypeScript native, IDE autocompletion |
+| Runtime `eval()` evaluation, injection risk | Expr AST safe evaluation, zero eval |
+| No type constraints, errors only at runtime | End-to-end type safety, compile-time errors |
+| Coupled to specific graph databases | Abstract query layer, supports Neo4j / custom engines |
+| Write your own permission logic | Built-in RBAC + row-level security |
+
+## Installation
+
+```bash
+bun add @ontograph/core
+# or
+npm install @ontograph/core
+```
+
+**Single runtime dependency:** `zod`
+
+## Features
+
+- **Type-safe ontology modeling** — Entity, Relation, Attribute, Constraint with full TypeScript inference
+- **Expr AST safe evaluation** — Pure function recursion, no `eval` / `new Function`, prototype pollution prevention
+- **Abstract query engine** — FilterOp → ObjectSet → Neo4j Cypher compilation
+- **RBAC access control** — Deny-first policy with row-level security conditions
+- **SHACL validation** — W3C standard Shapes generation and validation
+- **Datasource mapping** — Field mapping + SyncEngine + NaN-safe conversion
+- **Fluent Builder API** — `defineEntity().attr().rel().constraint().build()`
+- **TypeScript Codegen** — Generate type files from ontology definitions
+- **OWL export** — OWL 2 / JSON-LD standard format output
+- **Version management & Diff** — Ontology versioning and structural diff
+- **Lineage tracking** — Full lineage from datasources to entities
+
+## Next Steps
+
+<Cards>
+  <Card title="Quick Start" href="/docs/quick-start" />
+  <Card title="API Reference" href="/docs/api-reference" />
+</Cards>

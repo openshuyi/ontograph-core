@@ -1,0 +1,9 @@
+---
+title: Interactive Demo
+description: Explore supply chain ontology data with an interactive force-directed graph
+---
+
+import { ForceGraphDemo } from "../../components/force-graph";
+import { getSupplyChainGraphData } from "../../lib/supply-chain-data";
+
+<ForceGraphDemo {...getSupplyChainGraphData()} />

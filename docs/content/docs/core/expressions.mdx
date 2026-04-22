@@ -1,0 +1,191 @@
+---
+title: Safe Expression Evaluator
+description: Pure function recursion expression evaluation — zero eval, zero injection
+---
+
+The `SafeExpressionEvaluator` evaluates structured expression ASTs without using `eval()` or `new Function()`. It supports comparisons, logical operations, function calls, conditionals, arithmetic, and array operations — all through pure recursive descent.
+
+## Import
+
+```typescript
+import { SafeExpressionEvaluator } from "@ontograph/core";
+```
+
+## Basic Usage
+
+```typescript
+const evaluator = new SafeExpressionEvaluator();
+
+// Simple comparison
+const expr = {
+  type: "compare",
+  op: "gt",
+  left: { type: "property", path: "quantity" },
+  right: { type: "literal", value: 100 },
+};
+
+evaluator.evaluate(expr, { quantity: 150 }); // → true
+evaluator.evaluate(expr, { quantity: 50 });  // → false
+```
+
+## Expression Types
+
+The `Expr` union type supports the following node types:
+
+### Literal
+
+```typescript
+const literal: Expr = {
+  type: "literal",
+  value: "hello", // string | number | boolean | null
+};
+```
+
+### Property Path
+
+Dot-separated path resolution from the context object:
+
+```typescript
+const prop: Expr = {
+  type: "property",
+  path: "address.city", // resolves context.address.city
+};
+```
+
+### Comparison
+
+Supports 11 operators: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `contains`, `startsWith`, `endsWith`, `matches`, `in`.
+
+```typescript
+const compare: Expr = {
+  type: "compare",
+  op: "gte",
+  left: { type: "property", path: "age" },
+  right: { type: "literal", value: 18 },
+};
+```
+
+| Operator | Description | Example |
+|---|---|---|
+| `eq` / `neq` | Equality comparison | `quantity eq 100` |
+| `gt` / `gte` / `lt` / `lte` | Ordered comparison (number or string) | `price gt 50` |
+| `contains` / `startsWith` / `endsWith` | String matching | `name contains "test"` |
+| `matches` | Regex match (pattern limited to 200 chars, input to 10k chars) | `email matches "^[^@]+@[^@]+$"` |
+| `in` | Membership check (right must be array) | `status in ["active", "pending"]` |
+
+### Logical
+
+```typescript
+const logical: Expr = {
+  type: "logical",
+  op: "and", // or "or", "not"
+  operands: [
+    { type: "compare", op: "gt", left: { type: "property", path: "qty" }, right: { type: "literal", value: 0 } },
+    { type: "compare", op: "lt", left: { type: "property", path: "qty" }, right: { type: "literal", value: 1000 } },
+  ],
+};
+```
+
+### Function Call
+
+Built-in functions for common operations:
+
+| Function | Description | Example |
+|---|---|---|
+| `now` | Current ISO datetime | `"2026-04-17T10:30:00.000Z"` |
+| `today` | Current date | `"2026-04-17"` |
+| `count` | Array length | `count(items)` |
+| `sum` / `avg` / `max` / `min` | Array aggregation | `sum(prices)` |
+| `abs` / `round` | Math functions | `abs(-5)` → `5` |
+| `len` | String or array length | `len("hello")` → `5` |
+| `toUpperCase` / `toLowerCase` / `trim` | String functions | `trim("  hi  ")` → `"hi"` |
+
+```typescript
+const call: Expr = {
+  type: "call",
+  fn: "sum",
+  args: [{ type: "property", path: "prices" }],
+};
+```
+
+### Conditional (Ternary)
+
+```typescript
+const conditional: Expr = {
+  type: "conditional",
+  condition: { type: "compare", op: "gt", left: { type: "property", path: "qty" }, right: { type: "literal", value: 100 } },
+  thenExpr: { type: "literal", value: "high" },
+  elseExpr: { type: "literal", value: "low" },
+};
+```
+
+### Arithmetic
+
+```typescript
+const arithmetic: Expr = {
+  type: "arithmetic",
+  op: "multiply", // add, subtract, multiply, divide, modulo
+  left: { type: "property", path: "price" },
+  right: { type: "literal", value: 1.1 },
+};
+```
+
+### Array Operations
+
+```typescript
+const arrayExpr: Expr = {
+  type: "array",
+  op: "filter", // map, filter, some, every, includes
+  source: { type: "property", path: "items" },
+  itemExpr: {
+    type: "compare",
+    op: "gt",
+    left: { type: "property", path: "$item.price" },
+    right: { type: "literal", value: 10 },
+  },
+};
+```
+
+## Security Features
+
+- **Max recursion depth**: 50 levels — prevents malicious nesting
+- **Prototype pollution blacklist**: `__proto__`, `constructor`, `prototype` are blocked
+- **Regex safety**: Pattern limited to 200 chars, input truncated to 10k chars to prevent ReDoS
+- **Null safety**: Returns `undefined` for unresolvable expressions instead of throwing
+
+## Complex Example
+
+```typescript
+const evaluator = new SafeExpressionEvaluator();
+
+// "Is this a bulk order requiring restock?"
+const complexExpr: Expr = {
+  type: "logical",
+  op: "and",
+  operands: [
+    {
+      type: "compare",
+      op: "gt",
+      left: { type: "property", path: "quantity" },
+      right: { type: "literal", value: 100 },
+    },
+    {
+      type: "compare",
+      op: "lte",
+      left: { type: "property", path: "stock" },
+      right: { type: "literal", value: 50 },
+    },
+    {
+      type: "call",
+      fn: "len",
+      args: [{ type: "property", path: "items" }],
+    },
+  ],
+};
+
+evaluator.evaluate(complexExpr, {
+  quantity: 150,
+  stock: 30,
+  items: ["a", "b", "c"],
+});
+```

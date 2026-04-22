@@ -1,0 +1,129 @@
+---
+title: Query Engine
+description: Abstract query layer with FilterOp, ObjectSet, and Neo4j Cypher compilation
+---
+
+The query engine provides a storage-backend-agnostic querying interface. It compiles chainable filter operations into a `ResolvedQuery` that can be translated to Neo4j Cypher or any other backend.
+
+## Import
+
+```typescript
+import {
+  ObjectSet,
+  Neo4jQueryEngine,
+  ObjectSetCompiler,
+} from "@ontograph/core";
+
+import type {
+  IQueryEngine,
+  ResolvedQuery,
+  FilterOp,
+  PageResult,
+} from "@ontograph/core";
+```
+
+## Architecture
+
+```
+ObjectSet (chainable API)
+    ↓
+ObjectSetCompiler → ResolvedQuery
+    ↓
+IQueryEngine (storage backend)
+    ↓
+Neo4jQueryEngine → Cypher
+```
+
+## ObjectSet API
+
+The `ObjectSet` provides a chainable interface for building queries:
+
+```typescript
+import { ObjectSet } from "@ontograph/core";
+
+const objectSet = new ObjectSet("sc:Product")
+  .filter("scm:category", { type: "eq", value: "electronics" })
+  .filter("scm:price", { type: "compare", op: "lt", left: { type: "property", path: "price" }, right: { type: "literal", value: 100 } })
+  .orderBy("scm:name", "asc")
+  .limit(20)
+  .offset(0);
+```
+
+### Chainable Methods
+
+| Method | Parameters | Description |
+|---|---|---|
+| `.filter(field, op)` | `field: string`, `op: FilterOp` | Add a filter condition |
+| `.orderBy(field, dir)` | `field: string`, `dir: "asc" \| "desc"` | Sort results |
+| `.limit(n)` | `n: number` | Limit result count |
+| `.offset(n)` | `n: number` | Skip results for pagination |
+
+## IQueryEngine Interface
+
+```typescript
+interface IQueryEngine {
+  query<T>(query: ResolvedQuery, options?: PageOptions): Promise<PageResult<T>>;
+  aggregate(entityTypeRef: string, options: AggregateOptions, filters?: FilterOp[]): Promise<AggregateResult>;
+  count(entityTypeRef: string, filters?: FilterOp[]): Promise<number>;
+  fetchOne<T>(entityTypeRef: string, id: string): Promise<T | null>;
+}
+```
+
+Implement this interface to support any storage backend (PostgreSQL, MongoDB, in-memory, etc.).
+
+## Neo4j Integration
+
+```typescript
+import { Neo4jQueryEngine } from "@ontograph/core";
+
+// The Neo4jQueryEngine compiles queries to Cypher
+const engine = new Neo4jQueryEngine(neo4jDriver);
+
+const results = await engine.query(
+  resolvedQuery,
+  { limit: 20, offset: 0 }
+);
+```
+
+## Neo4j Schema Generation
+
+```typescript
+import { Neo4jSchemaGenerator } from "@ontograph/core";
+
+const generator = new Neo4jSchemaGenerator();
+const cypher = generator.generateConstraintCypher([warehouse, product]);
+// Produces statements like:
+// CREATE CONSTRAINT FOR (n:Warehouse) REQUIRE n['@id'] IS UNIQUE
+// CREATE CONSTRAINT FOR (n:Product) REQUIRE n['sc:sku'] IS UNIQUE
+```
+
+## ResolvedQuery
+
+The compiled query representation passed to storage backends:
+
+```typescript
+interface ResolvedQuery {
+  entityTypeRef: string;                          // Target entity @id
+  filters: Array<{ field: string; op: FilterOp }>; // AND-joined filters
+  orderBy?: Array<{ field: string; direction: "asc" | "desc" }>;
+  limit?: number;
+  offset?: number;
+}
+```
+
+## Pagination
+
+```typescript
+interface PageResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+interface PageOptions {
+  limit?: number;
+  offset?: number;
+}
+```

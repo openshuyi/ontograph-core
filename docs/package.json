@@ -1,0 +1,39 @@
+{
+  "name": "@ontograph/core-docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
+    "postinstall": "fumadocs-mdx",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@types/d3": "^7.4.3",
+    "cytoscape": "^3.33.2",
+    "d3": "^7.9.0",
+    "fumadocs-core": "16.7.16",
+    "fumadocs-mdx": "14.3.0",
+    "fumadocs-ui": "16.7.16",
+    "lucide-react": "^1.8.0",
+    "next": "16.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/cytoscape": "^3.31.0",
+    "@types/mdx": "^2.0.13",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.9",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2"
+  }
+}

@@ -1,0 +1,127 @@
+---
+title: Quick Start
+description: Get up and running with @ontograph/core in minutes
+---
+
+## Define a Supply Chain Ontology
+
+```typescript
+import {
+  defineEntity,
+  defineRelation,
+  OntologyValidator,
+  Neo4jSchemaGenerator,
+} from "@ontograph/core";
+
+// 1. Define entities with the Builder API
+const warehouse = defineEntity("sc:Warehouse", {
+  label: { en: "Warehouse", zh: "仓库" },
+  kind: "entity",
+})
+  .attr("sc:capacity", { identity: false, required: true })
+  .attr("sc:location", { required: true })
+  .rel("sc:stores", { min: 0, max: null })
+  .constraint("sc:PositiveCapacity")
+  .build();
+
+const product = defineEntity("sc:Product", {
+  label: { en: "Product", zh: "产品" },
+  kind: "entity",
+})
+  .attr("sc:sku", { identity: true, required: true })
+  .attr("sc:weight", { required: false })
+  .build();
+
+// 2. Define relations
+const storedIn = defineRelation(
+  "sc:storedIn",
+  { label: { en: "stored in" } },
+  "sc:Product",
+  "sc:Warehouse",
+);
+
+// 3. Validate the ontology
+const validator = new OntologyValidator();
+const result = validator.validate([warehouse, product], [storedIn]);
+if (!result.valid) {
+  console.error("Validation errors:", result.errors);
+}
+
+// 4. Generate Neo4j constraints
+const generator = new Neo4jSchemaGenerator();
+const cypher = generator.generateConstraintCypher([warehouse, product]);
+// → CREATE CONSTRAINT FOR (n:Warehouse) REQUIRE n['@id'] IS UNIQUE ...
+```
+
+## Safe Expression Evaluation
+
+```typescript
+import { SafeExpressionEvaluator } from "@ontograph/core";
+
+const evaluator = new SafeExpressionEvaluator();
+
+// Build an AST (or load from JSON)
+const expr = {
+  type: "compare",
+  op: "gt",
+  left: { type: "property", path: "quantity" },
+  right: { type: "literal", value: 100 },
+};
+
+const result = evaluator.evaluate(expr, { quantity: 150 });
+// → true  (pure function recursion, no eval, max depth 50)
+```
+
+## RBAC Access Control
+
+```typescript
+import { AccessController } from "@ontograph/core";
+
+const ac = new AccessController({ defaultPolicy: "deny" });
+
+ac.registerRoles([
+  {
+    "@id": "role:warehouse-manager",
+    label: { en: "Warehouse Manager" },
+    rules: [
+      { action: "read", resource: "entity", resourceRef: "*", effect: "allow" },
+      { action: "write", resource: "entity", resourceRef: "sc:Warehouse", effect: "allow" },
+      { action: "delete", resource: "entity", resourceRef: "*", effect: "deny" },
+    ],
+  },
+]);
+
+const check = ac.check("user:1", ["role:warehouse-manager"], "write", "entity", "sc:Warehouse");
+// → { allowed: true, reason: "..." }
+
+const deny = ac.check("user:1", ["role:warehouse-manager"], "delete", "entity", "sc:Product");
+// → { allowed: false, reason: "deny rule matched" }
+```
+
+## SHACL Validation
+
+```typescript
+import { SHACLShapeGenerator, SHACLValidator } from "@ontograph/core";
+
+const shapeGen = new SHACLShapeGenerator();
+const shapes = shapeGen.generate(ontology);
+// → { shapes: SHACLNodeShape[] }
+
+const shaclValidator = new SHACLValidator();
+const report = shaclValidator.validate(instance, shapes);
+// → { conformant: boolean, results: ValidationReport[] }
+```
+
+## OWL Export
+
+```typescript
+import { OWLExporter } from "@ontograph/core";
+
+const exporter = new OWLExporter(ontology, {
+  includeAnnotations: true,
+  baseIRI: "https://supply-chain.example/ontology/",
+});
+
+const turtle = exporter.export();
+// → Full Turtle/RDF output with owl:Class, owl:ObjectProperty, etc.
+```

@@ -1,47 +1,82 @@
 <div align="center">
 
+<img src="docs/logo.svg" width="120" height="120" alt="@ontograph/core logo" />
+
 # @ontograph/core
 
-**TypeScript 本体论框架 — 用代码定义你的世界**
+**TypeScript Ontology Framework — Define your world in code**
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/@ontograph/core.svg)](https://www.npmjs.com/package/@ontograph/core)
+[![CI](https://github.com/openshuyi/ontograph-core/actions/workflows/ci.yml/badge.svg)](https://github.com/openshuyi/ontograph-core/actions/workflows/ci.yml)
+[![en](https://img.shields.io/badge/lang-en-blue.svg)](README.md)
+[![zh](https://img.shields.io/badge/lang-zh-%23ff69b4.svg)](README_ZH.md)
 
-[English](#features) · [快速开始](#quick-start) · [API 文档](#api-overview) · [架构](#architecture)
+[Quick Start](#quick-start) · [Multi-Format Export](#multi-format-export) · [Architecture](#architecture) · [中文文档](README_ZH.md)
 
 </div>
 
 ---
 
-本体（Ontology）是知识图谱的灵魂。**@ontograph/core** 让你用纯 TypeScript 定义实体、关系、约束和规则——不用 XML，不用 Turtle，不用学 OWL。
+> Define entities, relations, constraints and rules in **pure TypeScript** — no XML, no Turtle, no OWL.
+> One definition → **OWL 2, SHACL, Neo4j Cypher, JSON Schema, Mermaid diagrams**.
 
-Inspired by [Palantir Ontology](https://docs.palantir.com/foundry/ontology/)，为开源世界而生。
+Inspired by [Palantir Ontology](https://docs.palantir.com/foundry/ontology/), built for the open-source world.
+**Single runtime dependency: [`zod`](https://github.com/colinhacks/zod)**
+
+---
+
+## ✨ 10-Second Wow
+
+```typescript
+import { defineEntity, defineRelation, MermaidExporter, OWLExporter, JsonSchemaExporter } from "@ontograph/core";
+
+const warehouse = defineEntity("sc:Warehouse", { label: { en: "Warehouse" }, kind: "entity" })
+  .attr("sc:capacity", { required: true })
+  .build();
+
+const product = defineEntity("sc:Product", { label: { en: "Product" }, kind: "entity" })
+  .attr("sc:sku", { identity: true, required: true })
+  .build();
+
+const storedIn = defineRelation("sc:storedIn", { label: { en: "stored in" } }, "sc:Product", "sc:Warehouse");
+```
+
+**One ontology, multiple outputs:**
+
+| Format | What you get |
+|--------|-------------|
+| `new MermaidExporter(ontology).export()` | 📊 Mermaid classDiagram — renders in GitHub README |
+| `new OWLExporter(ontology).export()` | 🦉 OWL 2 Turtle — W3C standard |
+| `new SHACLExporter(ontology).export()` | ✅ SHACL Shapes — W3C validation |
+| `new JsonSchemaExporter(ontology).exportString()` | 📋 JSON Schema Draft 2020-12 |
+| `new DotExporter(ontology).export()` | 🔵 Graphviz DOT — publication-quality diagrams |
+| `new Neo4jSchemaGenerator().generateConstraintCypher(...)` | 🗄️ Neo4j Cypher DDL |
 
 ## Why @ontograph/core?
 
-| 传统方式 | @ontograph/core |
-|---------|----------------|
-| OWL/RDF XML 配置，学习曲线陡峭 | TypeScript 原生，IDE 自动补全 |
-| 运行时 `eval()` 求值，有注入风险 | Expr AST 安全求值，零 eval |
-| 无类型约束，运行时才报错 | 端到端类型安全，编译期捕获错误 |
-| 耦合特定图数据库 | 抽象查询层，支持 Neo4j / 自定义引擎 |
-| 自己写权限逻辑 | 内置 RBAC + 行级安全 |
+| Traditional approach | @ontograph/core |
+|---|---|
+| OWL/RDF XML configuration, steep learning curve | TypeScript native, IDE autocompletion |
+| Runtime `eval()` evaluation, injection risk | Expr AST safe evaluation, zero eval |
+| No type constraints, errors only at runtime | End-to-end type safety, compile-time caught |
+| Coupled to specific graph databases | Abstract query layer, pluggable engines |
+| Write your own permission logic | Built-in RBAC + row-level security |
+| No visualization tooling | Mermaid + DOT + ER diagram export |
 
 ## Features
 
-- 🏗️ **类型安全本体建模** — Entity、Relation、Attribute、Constraint，完整 TypeScript 推断
-- 🔒 **Expr AST 安全求值** — 纯函数递归，无 `eval` / `new Function`，防原型污染和注入
-- 🔍 **抽象查询引擎** — FilterOp → ObjectSet → Neo4j Cypher 编译
-- 🛡️ **RBAC 访问控制** — Deny-first 策略 + 行级安全条件
-- ✅ **SHACL 校验** — W3C 标准 Shapes 生成与验证
-- 🔗 **数据源映射** — 字段映射 + SyncEngine + NaN 安全转换
+- 🏗️ **Type-safe ontology modeling** — Entity, Relation, Attribute, Constraint with full TypeScript inference
+- 🔒 **Expr AST safe evaluation** — Pure function recursion, no `eval` / `new Function`, prototype pollution and injection prevention
+- 🔍 **Abstract query engine** — FilterOp → ObjectSet → Neo4j Cypher compilation
+- 🛡️ **RBAC access control** — Deny-first policy with row-level security conditions
+- ✅ **SHACL validation** — W3C standard Shapes generation and validation
+- 🔗 **Datasource mapping** — Field mapping + SyncEngine + NaN-safe conversion
 - 🔧 **Fluent Builder API** — `defineEntity().attr().rel().constraint().build()`
-- 📦 **TypeScript Codegen** — 从本体定义生成类型文件
-- 🦉 **OWL 导出** — OWL 2 / JSON-LD 标准格式输出
-- 📊 **版本管理 & Diff** — 本体版本化与结构化差异比较
-- 🕸️ **血缘追踪** — 数据源到实体的完整血缘图谱
-
-**唯一运行时依赖：`zod`**
+- 📦 **Multi-format export** — OWL 2, SHACL, JSON Schema, Mermaid, DOT, ER diagram
+- 📊 **Version management & Diff** — Ontology versioning and structural diff
+- 🕸️ **Lineage tracking** — Full lineage from datasources to entities
+- 🏭 **Supply chain reference** — 350+ pre-built supply chain ontology (TMS/WMS/OMS/BMS)
 
 ## Installation
 
@@ -53,20 +88,19 @@ npm install @ontograph/core
 
 ## Quick Start
 
-### 定义一个供应链本体
+### Define a supply chain ontology
 
 ```typescript
 import {
   defineEntity,
   defineRelation,
-  defineAttribute,
   OntologyValidator,
   Neo4jSchemaGenerator,
 } from "@ontograph/core";
 
-// 1. 用 Builder API 定义实体
+// 1. Define entities with the Builder API
 const warehouse = defineEntity("sc:Warehouse", {
-  label: { zh: "仓库", en: "Warehouse" },
+  label: { en: "Warehouse", zh: "仓库" },
   kind: "entity",
 })
   .attr("sc:capacity", { identity: false, required: true })
@@ -76,14 +110,14 @@ const warehouse = defineEntity("sc:Warehouse", {
   .build();
 
 const product = defineEntity("sc:Product", {
-  label: { zh: "产品", en: "Product" },
+  label: { en: "Product", zh: "产品" },
   kind: "entity",
 })
   .attr("sc:sku", { identity: true, required: true })
   .attr("sc:weight", { required: false })
   .build();
 
-// 2. 定义关系
+// 2. Define relations
 const storedIn = defineRelation(
   "sc:storedIn",
   { label: { en: "stored in" } },
@@ -91,39 +125,38 @@ const storedIn = defineRelation(
   "sc:Warehouse",
 );
 
-// 3. 校验本体
+// 3. Validate the ontology
 const validator = new OntologyValidator();
 const result = validator.validate([warehouse, product], [storedIn]);
 if (!result.valid) {
   console.error("Validation errors:", result.errors);
 }
 
-// 4. 生成 Neo4j 约束
+// 4. Generate Neo4j constraints
 const generator = new Neo4jSchemaGenerator();
 const cypher = generator.generateConstraintCypher([warehouse, product]);
 // → CREATE CONSTRAINT FOR (n:Warehouse) REQUIRE n['@id'] IS UNIQUE ...
 ```
 
-### 安全表达式求值
+### Safe expression evaluation
 
 ```typescript
 import { SafeExpressionEvaluator } from "@ontograph/core";
 
 const evaluator = new SafeExpressionEvaluator();
 
-// 构造 AST（或从 JSON 加载）
 const expr = {
-  kind: "binary",
-  op: ">",
-  left: { kind: "attribute", path: "quantity" },
-  right: { kind: "literal", value: 100 },
+  type: "compare",
+  op: "gt",
+  left: { type: "property", path: "quantity" },
+  right: { type: "literal", value: 100 },
 };
 
 const result = evaluator.evaluate(expr, { quantity: 150 });
-// → true  (纯函数递归，无 eval，最大深度 50 层)
+// → true  (pure function recursion, no eval, max depth 50)
 ```
 
-### RBAC 权限控制
+### RBAC access control
 
 ```typescript
 import { AccessController } from "@ontograph/core";
@@ -135,38 +168,79 @@ ac.registerRoles([
     "@id": "role:warehouse-manager",
     label: { en: "Warehouse Manager" },
     rules: [
-      { action: "read", resource: "entity", resourceRef: "*", effect: "allow" },
-      { action: "write", resource: "entity", resourceRef: "sc:Warehouse", effect: "allow" },
-      { action: "delete", resource: "entity", resourceRef: "*", effect: "deny" },
+      { resource: "objectType", resourceRef: "*", permissions: ["view", "create", "edit"], effect: "allow" },
+      { resource: "objectType", resourceRef: "sc:Warehouse", permissions: ["delete"], effect: "deny" },
     ],
   },
 ]);
 
-const check = ac.check("user:1", ["role:warehouse-manager"], "write", "entity", "sc:Warehouse");
-// → { allowed: true, reason: "..." }
+const check = ac.check("user:1", ["role:warehouse-manager"], "edit", "objectType", "sc:Warehouse");
+// → { allowed: true, matchedRule: "role:warehouse-manager" }
 
-const deny = ac.check("user:1", ["role:warehouse-manager"], "delete", "entity", "sc:Product");
-// → { allowed: false, reason: "deny rule matched" }
+const deny = ac.check("user:1", ["role:warehouse-manager"], "delete", "objectType", "sc:Warehouse");
+// → { allowed: false, reason: "Explicitly denied by rule" }
+```
+
+## Multi-Format Export
+
+### Mermaid (renders in GitHub)
+
+```typescript
+import { MermaidExporter } from "@ontograph/core";
+
+const mermaid = new MermaidExporter(ontology).export();
+// Paste into GitHub README → instant visual diagram
+```
+
+### OWL 2 / SHACL
+
+```typescript
+import { OWLExporter, SHACLExporter } from "@ontograph/core";
+
+const owl = new OWLExporter(ontology).export();     // → Turtle format
+const shacl = new SHACLExporter(ontology).export();  // → SHACL Turtle
+```
+
+### JSON Schema
+
+```typescript
+import { JsonSchemaExporter } from "@ontograph/core";
+
+const schema = new JsonSchemaExporter(ontology).exportString();
+// → JSON Schema Draft 2020-12 with all entity types in $defs
+```
+
+### Graphviz DOT
+
+```typescript
+import { DotExporter } from "@ontograph/core";
+
+const dot = new DotExporter(ontology, { layout: "fdp", direction: "LR" }).export();
+// → Paste into any Graphviz renderer
 ```
 
 ## API Overview
 
-| 模块 | 入口 | 说明 |
-|------|------|------|
-| 核心类型 | `types` | EntityType, RelationType, AttributeDefinition, Constraint |
+| Module | Entry | Description |
+|---|---|---|
+| Core types | `types` | EntityType, RelationType, AttributeDefinition, Constraint |
 | Builder API | `builder` | defineEntity, defineRelation, defineAttribute |
-| 表达式求值 | `expression` | SafeExpressionEvaluator, DerivedAttributeEvaluator |
-| 查询引擎 | `query` | FilterOp, ObjectSet, Neo4jQueryEngine |
-| RBAC 安全 | `security` | AccessController, RoleDefinition |
-| SHACL 校验 | `validation` | SHACLShapeGenerator, SHACLValidator |
-| 数据源映射 | `datasource` | SyncEngine, DatasourceDefinition |
-| OWL 导出 | `exporters/owl-exporter` | OWL 2 / JSON-LD 输出 |
-| SHACL 导出 | `exporters/shacl-exporter` | SHACL Shapes JSON-LD |
-| 代码生成 | `codegen` | TypeGenerator |
-| 规则引擎 | `rule-engine` | RuleEngine (Expr 优先求值) |
-| 版本管理 | `versioning` | VersionManager |
-| 结构 Diff | `diff` | OntologyDiffer |
-| 血缘追踪 | `lineage` | LineageTracker |
+| Expression evaluation | `expression` | SafeExpressionEvaluator, DerivedAttributeEvaluator |
+| Query engine | `query` | FilterOp, ObjectSet, Neo4jQueryEngine |
+| RBAC security | `security` | AccessController, RoleDefinition |
+| SHACL validation | `validation` | SHACLShapeGenerator, SHACLValidator |
+| Datasource mapping | `datasource` | SyncEngine, DatasourceDefinition |
+| OWL export | `exporters/owl-exporter` | OWL 2 / JSON-LD output |
+| SHACL export | `exporters/shacl-exporter` | SHACL Shapes JSON-LD |
+| Mermaid export | `exporters/mermaid-exporter` | Mermaid classDiagram / graph / flowchart |
+| DOT export | `exporters/dot-exporter` | Graphviz DOT format |
+| ER diagram | `exporters/er-exporter` | Mermaid erDiagram |
+| JSON Schema | `exporters/json-schema-exporter` | JSON Schema Draft 2020-12 |
+| Code generation | `codegen` | TypeGenerator |
+| Rule engine | `rule-engine` | RuleEngine (Expr-first evaluation) |
+| Version management | `versioning` | VersionManager |
+| Structural Diff | `diff` | DiffEngine |
+| Lineage tracking | `lineage` | LineageTracker |
 
 ## Architecture
 
@@ -174,57 +248,68 @@ const deny = ac.check("user:1", ["role:warehouse-manager"], "delete", "entity", 
 @ontograph/core
 │
 ├── 📐 Modeling Layer
-│   ├── types.ts              ── 核心类型定义
+│   ├── types.ts              ── Core type definitions
 │   ├── builder/              ── Fluent Builder API
-│   └── validator.ts          ── 本体校验
+│   └── validator.ts          ── Ontology validation
 │
 ├── ⚡ Execution Layer
-│   ├── expression/           ── Expr AST + 安全求值器 (LRU 缓存)
-│   ├── rule-engine.ts        ── 规则引擎 (Expr 优先)
-│   └── action-engine.ts      ── 动作引擎
+│   ├── expression/           ── Expr AST + safe evaluator (LRU cache)
+│   ├── rule-engine.ts        ── Rule engine (Expr-first)
+│   └── action-engine.ts      ── Action engine
 │
 ├── 🔍 Query Layer
 │   ├── query/                ── FilterOp → ObjectSet → Cypher
-│   └── datasource/           ── 数据源映射 + SyncEngine
+│   └── datasource/           ── Datasource mapping + SyncEngine
 │
 ├── 🛡️ Security Layer
 │   └── security/             ── RBAC AccessController (deny-first)
 │
 ├── ✅ Standards Layer
-│   ├── validation/           ── W3C SHACL 生成 + 校验
-│   └── exporters/            ── OWL 2 / JSON-LD 导出
+│   ├── validation/           ── W3C SHACL generation + validation
+│   └── exporters/            ── OWL 2 · SHACL · Mermaid · DOT · ER · JSON Schema
 │
 ├── 🔧 Tooling
-│   ├── codegen/              ── TypeScript 类型生成
-│   ├── versioning.ts         ── 版本管理
-│   ├── diff.ts               ── 结构化 Diff
-│   └── lineage.ts            ── 血缘追踪
+│   ├── codegen/              ── TypeScript type generation
+│   ├── versioning.ts         ── Version management
+│   ├── diff.ts               ── Structural diff
+│   └── lineage.ts            ── Lineage tracking
 │
 └── 📦 Examples
-    └── examples/supply-chain/ ── 供应链本体示例
+    └── examples/supply-chain/ ── 350+ supply chain ontology definitions
 ```
 
 ## Comparison
 
-| 特性 | @ontograph/core | Palantir Ontology | OWL API (Java) |
-|------|:-:|:-:|:-:|
-| 语言 | TypeScript | TypeScript (闭源) | Java |
-| 开源 | ✅ MIT | ❌ | ✅ |
-| 类型安全 | ✅ 编译期 | ✅ | ❌ 运行时 |
-| 安全求值 | ✅ Expr AST | ✅ | N/A |
+| Feature | @ontograph/core | Palantir Ontology | OWL API (Java) |
+|---|:-:|:-:|:-:|
+| Language | TypeScript | TypeScript (closed source) | Java |
+| Open source | ✅ MIT | ❌ | ✅ |
+| Type safety | ✅ Compile-time | ✅ | ❌ Runtime |
+| Safe evaluation | ✅ Expr AST | ✅ | N/A |
 | SHACL | ✅ | ❌ | ✅ |
-| OWL 导出 | ✅ | ❌ | ✅ |
+| OWL export | ✅ | ❌ | ✅ |
+| JSON Schema export | ✅ | ❌ | ❌ |
+| Mermaid visualization | ✅ | ❌ | ❌ |
 | Builder API | ✅ | ✅ | ❌ |
 | RBAC | ✅ | ✅ | ❌ |
-| Neo4j 集成 | ✅ | ❌ | ❌ |
-| 运行时依赖 | zod | 数十个 | 重量级 |
+| Neo4j integration | ✅ | ❌ | ❌ |
+| Runtime dependencies | zod | Dozens | Heavyweight |
 
 ## Development
 
 ```bash
-bun install
-npx tsc --noEmit     # 类型检查
+bun install           # Install dependencies
+bun run typecheck     # Type check (tsc --noEmit)
+bun run build         # Build to dist/
+bun run test          # Run tests
+bun run lint          # Lint with Biome
+bun run lint:fix      # Lint and auto-fix
+bun run format        # Format code
 ```
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 

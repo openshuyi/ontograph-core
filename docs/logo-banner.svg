@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Gradient for nodes -->
+    <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    
+    <!-- Gradient for edges -->
+    <linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.5"/>
+    </linearGradient>
+    
+    <!-- Background gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F0F1A"/>
+      <stop offset="50%" stop-color="#1A1A2E"/>
+      <stop offset="100%" stop-color="#0F0F1A"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Subtle grid pattern -->
+  <g opacity="0.05">
+    <line x1="0" y1="100" x2="1200" y2="100" stroke="#6366F1" stroke-width="1"/>
+    <line x1="0" y1="200" x2="1200" y2="200" stroke="#6366F1" stroke-width="1"/>
+    <line x1="0" y1="300" x2="1200" y2="300" stroke="#6366F1" stroke-width="1"/>
+    <line x1="0" y1="400" x2="1200" y2="400" stroke="#6366F1" stroke-width="1"/>
+    <line x1="0" y1="500" x2="1200" y2="500" stroke="#6366F1" stroke-width="1"/>
+    <line x1="100" y1="0" x2="100" y2="630" stroke="#6366F1" stroke-width="1"/>
+    <line x1="200" y1="0" x2="200" y2="630" stroke="#6366F1" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#6366F1" stroke-width="1"/>
+    <line x1="400" y1="0" x2="400" y2="630" stroke="#6366F1" stroke-width="1"/>
+  </g>
+  
+  <!-- Logo section (scaled down, centered in left portion) -->
+  <g transform="translate(150, 135)">
+    <!-- Background glow effect -->
+    <circle cx="256" cy="256" r="180" fill="#6366F1" fill-opacity="0.08"/>
+    
+    <!-- Connection lines (edges) -->
+    <!-- Center to top-left node -->
+    <line x1="256" y2="140" x2="140" y2="140" stroke="url(#edgeGradient)" stroke-width="8" stroke-linecap="round"/>
+    <!-- Center to top-right node -->
+    <line x1="256" y2="256" x2="372" y2="140" stroke="url(#edgeGradient)" stroke-width="8" stroke-linecap="round"/>
+    <!-- Center to bottom node -->
+    <line x1="256" y2="256" x2="256" y2="372" stroke="url(#edgeGradient)" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Interconnecting lines -->
+    <!-- Top-left to top-right -->
+    <line x1="140" y2="140" x2="372" y2="140" stroke="url(#edgeGradient)" stroke-width="5" stroke-linecap="round"/>
+    <!-- Top-left to bottom -->
+    <line x1="140" y2="140" x2="256" y2="372" stroke="url(#edgeGradient)" stroke-width="5" stroke-linecap="round"/>
+    <!-- Top-right to bottom -->
+    <line x1="372" y2="140" x2="256" y2="372" stroke="url(#edgeGradient)" stroke-width="5" stroke-linecap="round"/>
+    
+    <!-- Outer nodes -->
+    <circle cx="140" cy="140" r="36" fill="url(#nodeGradient)"/>
+    <circle cx="372" cy="140" r="36" fill="url(#nodeGradient)"/>
+    <circle cx="256" cy="372" r="36" fill="url(#nodeGradient)"/>
+    
+    <!-- Center node -->
+    <circle cx="256" cy="256" r="52" fill="url(#nodeGradient)"/>
+    
+    <!-- Inner detail for center node -->
+    <circle cx="256" cy="256" r="22" fill="#ffffff" fill-opacity="0.2"/>
+    
+    <!-- Node highlights -->
+    <circle cx="140" cy="140" r="12" fill="#ffffff" fill-opacity="0.15"/>
+    <circle cx="372" cy="140" r="12" fill="#ffffff" fill-opacity="0.15"/>
+    <circle cx="256" cy="372" r="12" fill="#ffffff" fill-opacity="0.15"/>
+  </g>
+  
+  <!-- Text section -->
+  <!-- @ontograph/core title -->
+  <text x="720" y="240" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="72" font-weight="700" fill="#ffffff">
+    @ontograph/core
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="720" y="320" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="32" font-weight="500" fill="#8B5CF6" fill-opacity="0.9">
+    TypeScript Ontology Framework
+  </text>
+  
+  <!-- Decorative underline -->
+  <rect x="720" y="340" width="380" height="3" rx="1.5" fill="url(#nodeGradient)" fill-opacity="0.6"/>
+  
+  <!-- Feature tags (small text) -->
+  <text x="720" y="400" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="400" fill="#6366F1" fill-opacity="0.8">
+    Knowledge Graphs · Type-Safe · Entity Relations
+  </text>
+  
+  <!-- Decorative dots -->
+  <circle cx="720" cy="480" r="4" fill="#6366F1"/>
+  <circle cx="740" cy="480" r="4" fill="#7C3AED" fill-opacity="0.7"/>
+  <circle cx="760" cy="480" r="4" fill="#8B5CF6" fill-opacity="0.5"/>
+</svg>

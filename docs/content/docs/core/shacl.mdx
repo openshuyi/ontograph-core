@@ -1,0 +1,137 @@
+---
+title: SHACL Validation
+description: W3C SHACL standard shapes generation and validation
+---
+
+The validation module generates W3C SHACL (Shapes Constraint Language) shapes from ontology definitions and validates data instances against them.
+
+## Import
+
+```typescript
+import {
+  SHACLShapeGenerator,
+  SHACLValidator,
+  exprToPropertyShape,
+} from "@ontograph/core";
+
+import type {
+  SHACLShapes,
+  SHACLNodeShape,
+  SHACLPropertyShape,
+} from "@ontograph/core";
+```
+
+## Generate SHACL Shapes
+
+```typescript
+const generator = new SHACLShapeGenerator();
+const shapes: SHACLShapes = generator.generate(ontology);
+
+// shapes = {
+//   shapes: [
+//     {
+//       "@id": "sc:ProductShape",
+//       targetClass: "sc:Product",
+//       propertyShapes: [
+//         { path: "sc:sku", datatype: "xsd:string", minCount: 1 },
+//         { path: "sc:weight", datatype: "xsd:float" },
+//       ],
+//     },
+//   ],
+// }
+```
+
+## Validate Instances
+
+```typescript
+const validator = new SHACLValidator();
+const report = validator.validate(instance, shapes);
+
+if (!report.conformant) {
+  for (const result of report.results) {
+    console.error(`${result.severity}: ${result.message}`);
+    console.error(`  at ${result.path} (expected: ${result.constraint})`);
+  }
+}
+```
+
+## Expr to SHACL Conversion
+
+Convert structured expression ASTs to SHACL property shape constraints:
+
+```typescript
+import { exprToPropertyShape } from "@ontograph/core";
+
+// GTE → minInclusive
+const gteShape = exprToPropertyShape({
+  type: "compare",
+  op: "gte",
+  left: { type: "property", path: "age" },
+  right: { type: "literal", value: 18 },
+});
+// → { minInclusive: 18 }
+
+// LTE → maxInclusive
+const lteShape = exprToPropertyShape({
+  type: "compare",
+  op: "lte",
+  left: { type: "property", path: "price" },
+  right: { type: "literal", value: 1000 },
+});
+// → { maxInclusive: 1000 }
+```
+
+### Supported Conversions
+
+| Expr Operator | SHACL Constraint | Example |
+|---|---|---|
+| `gte` | `minInclusive` | `age >= 18` → `{ minInclusive: 18 }` |
+| `lte` | `maxInclusive` | `price <= 1000` → `{ maxInclusive: 1000 }` |
+| `gt` | `minInclusive` (value + 1) | `qty > 0` → `{ minInclusive: 1 }` |
+| `lt` | `maxInclusive` (value - 1) | `qty < 100` → `{ maxInclusive: 99 }` |
+
+## SHACL Types
+
+### SHACLNodeShape
+
+```typescript
+interface SHACLNodeShape {
+  "@id": string;                    // Shape ID (e.g. "sc:ProductShape")
+  targetClass: string;              // Target entity @id
+  propertyShapes: SHACLPropertyShape[];
+  closed?: boolean;                 // Whether to allow extra properties
+}
+```
+
+### SHACLPropertyShape
+
+```typescript
+interface SHACLPropertyShape {
+  path: string;                     // Property path
+  datatype?: string;                // XSD datatype (e.g. "xsd:string")
+  minCount?: number;                // Minimum cardinality
+  maxCount?: number;                // Maximum cardinality
+  minInclusive?: number;            // Minimum value (inclusive)
+  maxInclusive?: number;            // Maximum value (inclusive)
+  pattern?: string;                 // Regex pattern
+  in?: string[];                    // Allowed values
+  class_?: string;                  // SHACL class constraint
+  severity?: "violation" | "warning" | "info";
+  message?: string;
+}
+```
+
+## DataType Mapping
+
+Entity attributes are mapped to XSD datatypes:
+
+| @ontograph/core DataType | XSD Type |
+|---|---|
+| `string` | `xsd:string` |
+| `integer` | `xsd:integer` |
+| `float` | `xsd:float` |
+| `decimal` | `xsd:decimal` |
+| `boolean` | `xsd:boolean` |
+| `datetime` | `xsd:dateTime` |
+| `date` | `xsd:date` |
+| `duration` | `xsd:duration` |

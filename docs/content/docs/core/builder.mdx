@@ -1,0 +1,131 @@
+---
+title: Fluent Builder API
+description: Define entities, relations, and attributes with a chainable TypeScript API
+---
+
+The Builder API provides a fluent, chainable interface for constructing ontology definitions with full TypeScript type safety.
+
+## Import
+
+```typescript
+import { defineEntity, defineRelation, defineAttribute } from "@ontograph/core";
+```
+
+## Define Entity
+
+```typescript
+const product = defineEntity("scm:Product", {
+  kind: "entity",        // "entity" | "event" | "role" | "value"
+  label: { zh: "产品", en: "Product" },
+  description: { en: "A product in the supply chain" },
+})
+  .attr("scm:skuCode", { identity: true, required: true })
+  .attr("scm:name", { required: true })
+  .attr("scm:weight", { required: false })
+  .rel("scm:suppliedBy", { min: 1, max: null })
+  .rel("scm:storedIn", { min: 0, max: 5 })
+  .constraint("scm:PositivePrice")
+  .constraint("scm:ValidSKU")
+  .implements("scm:TraceableItem")
+  .extends("scm:BaseItem")
+  .ui({ color: "#2E7D32", icon: "package", visible: true, group: "inventory" })
+  .build();
+```
+
+### EntityConfig
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `kind` | `"entity" \| "event" \| "role" \| "value"` | Yes | Entity classification |
+| `label` | `LocalizedText` | Yes | Display name (multi-language) |
+| `description` | `LocalizedText` | No | Detailed description |
+| `extends` | `string[]` | No | Parent entity IDs |
+| `implements` | `string[]` | No | Interface IDs to implement |
+
+### Builder Methods
+
+| Method | Parameters | Description |
+|---|---|---|
+| `.attr(ref, opts?)` | `ref: string`, `opts?: { identity?, required? }` | Add an attribute reference |
+| `.rel(ref, opts?)` | `ref: string`, `opts?: { min?, max? }` | Add a relation reference |
+| `.constraint(ref)` | `ref: string` | Add a constraint reference |
+| `.implements(iface)` | `iface: string` | Declare interface implementation |
+| `.extends(parent)` | `parent: string` | Set parent entity |
+| `.ui(config)` | `EntityUIConfig` | Set UI display options |
+| `.build()` | — | Build and return `EntityType` |
+
+### EntityUIConfig
+
+```typescript
+interface EntityUIConfig {
+  color?: string;    // Hex color, e.g. "#2E7D32"
+  icon?: string;     // Icon name for display
+  visible?: boolean; // Whether visible in UI
+  group?: string;    // UI grouping key
+}
+```
+
+## Define Relation
+
+```typescript
+const storedIn = defineRelation("scm:storedIn", {
+  label: { en: "stored in", zh: "存储于" },
+  description: { en: "A product stored in a warehouse" },
+  domain: "scm:Product",    // Source entity type
+  range: "scm:Warehouse",   // Target entity type
+  min: 0,                   // Minimum cardinality
+  max: 5,                   // Maximum cardinality (null = unlimited)
+  inverse: "scm:contains",  // Inverse relation @id
+});
+```
+
+### RelationConfig
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `label` | `LocalizedText` | Yes | Display name |
+| `description` | `LocalizedText` | No | Detailed description |
+| `domain` | `string` | Yes | Source entity `@id` |
+| `range` | `string` | Yes | Target entity `@id` |
+| `min` | `number` | No | Minimum cardinality |
+| `max` | `number \| null` | No | Maximum cardinality (`null` = unlimited) |
+| `inverse` | `string` | No | Inverse relation `@id` |
+
+## Define Attribute
+
+```typescript
+const skuAttr = defineAttribute("scm:skuCode", {
+  label: { en: "SKU Code", zh: "SKU编码" },
+  description: { en: "Unique stock keeping unit code" },
+  datatype: "string",
+  required: true,
+  identity: true,
+  readonly: false,
+  pattern: "^[A-Z]{3}-\\d{4}$",
+});
+```
+
+### AttributeConfig
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `label` | `LocalizedText` | Yes | Display name |
+| `description` | `LocalizedText` | No | Detailed description |
+| `datatype` | `DataType` | Yes | Data type (see [Core Types](/docs/core/types)) |
+| `datatypeRef` | `string` | No | Reference type ID (when datatype is `"ref"`) |
+| `required` | `boolean` | No | Whether value is required |
+| `identity` | `boolean` | No | Whether this is an identity field |
+| `readonly` | `boolean` | No | Whether this field is read-only |
+| `defaultValue` | `unknown` | No | Default value |
+| `enum` | `(string \| number)[]` | No | Allowed values |
+| `pattern` | `string` | No | Regex validation pattern |
+
+## Output Types
+
+Each builder produces a typed output:
+
+- `defineEntity(...).build()` → `EntityType`
+- `defineRelation(...)` → `RelationType`
+- `defineAttribute(...)` → `AttributeDefinition`
+
+These types can be collected into an `OntologyDefinition` for validation, SHACL generation, OWL export, and more.

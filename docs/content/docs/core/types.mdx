@@ -1,0 +1,213 @@
+---
+title: Core Types
+description: Type definitions that form the foundation of the ontology model
+---
+
+All core types use JSON-LD style identifiers (`@id`, `@type`) and support multi-language labels via `LocalizedText`.
+
+## Import
+
+```typescript
+import type {
+  EntityType,
+  RelationType,
+  AttributeDefinition,
+  Constraint,
+  OntologyDefinition,
+  DataType,
+  LocalizedText,
+  // ... and more
+} from "@ontograph/core";
+```
+
+## LocalizedText
+
+Multi-language text used across all definitions:
+
+```typescript
+interface LocalizedText {
+  zh?: string;
+  en?: string;
+  [lang: string]: string | undefined;
+}
+
+// Usage
+const label: LocalizedText = { en: "Product", zh: "产品", ja: "製品" };
+```
+
+## DataType
+
+Supported data types for attributes:
+
+```typescript
+type DataType =
+  | "string"      // Text
+  | "integer"     // Whole numbers
+  | "float"       // Floating point
+  | "decimal"     // Precise decimals
+  | "boolean"     // True/false
+  | "datetime"    // ISO 8601 datetime
+  | "date"        // ISO 8601 date
+  | "array"       // JSON array
+  | "object"      // JSON object
+  | "ref"         // Reference to another entity
+  | "geopoint"    // Geographic coordinates
+  | "geopolygon"  // Geographic polygon
+  | "vector"      // Embedding vector
+  | "duration"    // Time duration
+  | "currency"    // Currency amount
+  | "measurement" // Physical measurement
+  | "struct";     // Structured data (see StructField)
+```
+
+## EntityType
+
+Core entity definition:
+
+```typescript
+interface EntityType {
+  "@id": string;                          // Unique ID (e.g. "sc:Product")
+  "@type": "EntityType";
+  label: LocalizedText;
+  description?: LocalizedText;
+  kind: "entity" | "event" | "role" | "value";
+  extends?: string[];                     // Parent entity IDs
+  implements?: string[];                  // Interface IDs
+  attributes: AttributeRef[];             // Attribute references
+  relations: RelationRef[];               // Relation references
+  constraints: ConstraintRef[];           // Constraint references
+  ui?: EntityUIConfig;                    // Display configuration
+}
+```
+
+## RelationType
+
+Defines a directed relationship between two entity types:
+
+```typescript
+interface RelationType {
+  "@id": string;                          // e.g. "sc:storedIn"
+  "@type": "RelationType";
+  label: LocalizedText;
+  description?: LocalizedText;
+  domain: string;                         // Source entity @id
+  range: string;                          // Target entity @id
+  min?: number;                           // Min cardinality
+  max?: number | null;                    // Max cardinality (null = unlimited)
+  inverse?: string;                       // Inverse relation @id
+  properties?: AttributeRef[];            // Relation properties
+}
+```
+
+## AttributeDefinition
+
+Full attribute schema definition:
+
+```typescript
+interface AttributeDefinition {
+  "@id": string;
+  "@type": "Attribute";
+  label: LocalizedText;
+  description?: LocalizedText;
+  datatype: DataType;
+  datatypeRef?: string;                   // For "ref" type
+  required?: boolean;
+  identity?: boolean;                     // Uniquely identifies the entity
+  readonly?: boolean;
+  defaultValue?: unknown;
+  validation?: ValidationRule[];
+  enum?: Array<string | number>;
+  structDefinition?: StructField[];       // For "struct" type
+}
+```
+
+## Constraint
+
+Business rule attached to an entity:
+
+```typescript
+interface Constraint {
+  "@id": string;
+  "@type": "Constraint";
+  label?: LocalizedText;
+  on: string;                             // Target attribute @id
+  rule: string;                           // Legacy rule string
+  expr?: Expr;                            // Structured expression (recommended)
+  message?: LocalizedText;
+  severity?: "error" | "warning" | "info";
+}
+```
+
+## OntologyDefinition
+
+Top-level container for all ontology elements:
+
+```typescript
+interface OntologyDefinition {
+  "@context": OntologyContext;            // Namespace prefixes
+  "@id": string;
+  "@type": "Ontology";
+  version: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  entityTypes: EntityType[];
+  eventTypes?: EntityType[];
+  roleTypes?: EntityType[];
+  relationTypes: RelationType[];
+  valueTypes?: ValueType[];
+  attributes: AttributeDefinition[];
+  constraints: Constraint[];
+  views?: ViewDefinition[];
+  mappings?: MappingDefinition[];
+  actionTypes?: ActionType[];
+  logicRules?: LogicRule[];
+  interfaces?: InterfaceDefinition[];
+  derivedAttributes?: DerivedAttribute[];
+  datasources?: DatasourceDefinition[];
+  roles?: RoleDefinition[];
+}
+```
+
+## Supporting Types
+
+### AttributeRef
+
+```typescript
+interface AttributeRef {
+  ref: string;            // Attribute @id
+  required?: boolean;
+  identity?: boolean;
+}
+```
+
+### RelationRef
+
+```typescript
+interface RelationRef {
+  ref: string;            // Relation @id
+  min?: number;
+  max?: number | null;
+  properties?: Record<string, unknown>;
+}
+```
+
+### ValidationRule
+
+```typescript
+interface ValidationRule {
+  type: "min" | "max" | "pattern" | "custom";
+  value?: unknown;
+  message?: LocalizedText;
+}
+```
+
+### StructField
+
+```typescript
+interface StructField {
+  name: string;
+  datatype: DataType;
+  required?: boolean;
+  description?: LocalizedText;
+}
+```

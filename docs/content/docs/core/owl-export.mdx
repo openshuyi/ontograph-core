@@ -1,0 +1,136 @@
+---
+title: OWL 2 / JSON-LD Export
+description: Export ontology definitions to OWL 2 Turtle and JSON-LD formats
+---
+
+The OWL exporter converts `@ontograph/core` definitions into standard W3C OWL 2 DL Turtle format and JSON-LD.
+
+## Import
+
+```typescript
+import { OWLExporter } from "@ontograph/core";
+
+import type { OWLExportOptions } from "@ontograph/core";
+```
+
+## Basic Export
+
+```typescript
+const exporter = new OWLExporter(ontology, {
+  includeAnnotations: true,
+  baseIRI: "https://supply-chain.example/ontology/",
+});
+
+const turtle: string = exporter.export();
+```
+
+## Export Options
+
+```typescript
+interface OWLExportOptions {
+  includeImports?: boolean;         // Include owl:imports (default: false)
+  includeAnnotations?: boolean;     // Include rdfs:label/comment (default: true)
+  baseIRI?: string;                 // Base IRI for the ontology (default: "https://ontograph.app/ontology/")
+}
+```
+
+## Mapping Rules
+
+| @ontograph/core | OWL 2 DL |
+|---|---|
+| `EntityType` | `owl:Class` |
+| `EntityType.kind = "event"` | `owl:Class` + `rdfs:subClassOf :EventType` |
+| `EntityType.kind = "role"` | `owl:Class` + `rdfs:subClassOf :RoleType` |
+| `EntityType.kind = "value"` | `owl:Class` + `rdfs:subClassOf :ValueType` |
+| `EntityType.extends` | `rdfs:subClassOf` |
+| `RelationType` | `owl:ObjectProperty` |
+| `AttributeDefinition` (non-ref) | `owl:DatatypeProperty` |
+| `AttributeDefinition` (ref type) | `owl:ObjectProperty` |
+| `Constraint` (with expr) | `owl:Class` + `owl:equivalentClass` restriction |
+| `ValueType` | `owl:Class` + `owl:oneOf` |
+| `InterfaceDefinition` | `owl:Class` + `owl:equivalentClass` intersection |
+
+## Example Output
+
+```turtle
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sc: <https://supply-chain.example/> .
+@prefix : <https://supply-chain.example/ontology/> .
+
+<> a owl:Ontology ;
+    owl:versionIRI <sc:SupplyChainOntology> ;
+    owl:versionInfo "1.0.0" ;
+    rdfs:label "Supply Chain Ontology"@en .
+
+sc:Product a owl:Class ;
+    rdfs:label "Product"@en ;
+    rdfs:subClassOf [ a owl:Restriction ;
+        owl:onProperty sc:skuCode ;
+        owl:minCardinality "1"^^xsd:nonNegativeInteger ] .
+
+sc:storedIn a owl:ObjectProperty ;
+    rdfs:domain sc:Product ;
+    rdfs:range sc:Warehouse ;
+    rdfs:label "stored in"@en .
+```
+
+## Constraint Export
+
+Constraints with structured `Expr` are exported as OWL restrictions:
+
+```typescript
+const constraint = {
+  "@id": "sc:PositiveCapacity",
+  "@type": "Constraint",
+  on: "sc:capacity",
+  rule: "capacity >= 0",
+  expr: {
+    type: "compare",
+    op: "gte",
+    left: { type: "property", path: "capacity" },
+    right: { type: "literal", value: 0 },
+  },
+};
+```
+
+Exports as:
+
+```turtle
+sc:PositiveCapacity a owl:Class ;
+    owl:equivalentClass [
+        a owl:Restriction ;
+        owl:onProperty :capacity ;
+        owl:withRestrictions ( [ xsd:minInclusive "0"^^xsd:decimal ] )
+    ] .
+```
+
+## Interface Export
+
+Interfaces are exported as `owl:equivalentClass` with `owl:intersectionOf`:
+
+```typescript
+const traceable = {
+  "@id": "scm:TraceableItem",
+  "@type": "Interface",
+  label: { en: "Traceable Item" },
+  requiredAttributes: [
+    { ref: "scm:batchId", required: true },
+    { ref: "scm:originRef", required: true },
+  ],
+};
+```
+
+Exports as:
+
+```turtle
+scm:TraceableItem a owl:Class ;
+    rdfs:label "Traceable Item"@en ;
+    owl:equivalentClass [ a owl:Class ;
+        owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty scm:batchId ; owl:minCardinality "1"^^xsd:nonNegativeInteger ]
+            [ a owl:Restriction ; owl:onProperty scm:originRef ; owl:minCardinality "1"^^xsd:nonNegativeInteger ]
+        ) ] .
+```

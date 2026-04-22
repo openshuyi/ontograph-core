@@ -1,0 +1,176 @@
+---
+title: RBAC Security
+description: Deny-first access control with row-level security and role inheritance
+---
+
+The `AccessController` implements a deny-first RBAC (Role-Based Access Control) system with row-level security conditions and role inheritance.
+
+## Import
+
+```typescript
+import { AccessController } from "@ontograph/core";
+
+import type {
+  RoleDefinition,
+  PermissionCheckResult,
+  RowSecurityCondition,
+} from "@ontograph/core";
+```
+
+## Basic Usage
+
+```typescript
+const ac = new AccessController({ defaultPolicy: "deny" });
+
+ac.registerRoles([
+  {
+    "@id": "role:viewer",
+    label: { en: "Viewer" },
+    rules: [
+      {
+        resource: "entity",
+        resourceRef: "*",
+        permissions: ["read"],
+        effect: "allow",
+      },
+    ],
+  },
+  {
+    "@id": "role:warehouse-manager",
+    label: { en: "Warehouse Manager" },
+    extends: ["role:viewer"],
+    rules: [
+      {
+        resource: "entity",
+        resourceRef: "sc:Warehouse",
+        permissions: ["read", "write"],
+        effect: "allow",
+      },
+      {
+        resource: "entity",
+        resourceRef: "*",
+        permissions: ["delete"],
+        effect: "deny",
+      },
+    ],
+  },
+]);
+```
+
+## Permission Check
+
+```typescript
+const result: PermissionCheckResult = ac.check(
+  "user:1",                              // User ID
+  ["role:warehouse-manager"],             // User's role IDs
+  "write",                               // Action
+  "entity",                              // Resource type
+  "sc:Warehouse",                        // Resource reference
+);
+
+// result = { allowed: true, matchedRule: "role:warehouse-manager" }
+```
+
+### PermissionCheckResult
+
+```typescript
+interface PermissionCheckResult {
+  allowed: boolean;
+  reason?: string;
+  matchedRule?: string;
+}
+```
+
+## Deny-First Policy
+
+When a deny rule matches, it **always** takes precedence over any allow rule:
+
+1. **Explicit deny** → immediately returns `{ allowed: false }`
+2. **Explicit allow** → returns `{ allowed: true }`
+3. **No matching rule** → falls through to `defaultPolicy`
+
+```typescript
+// Default policy controls unmatched access
+const acAllow = new AccessController({ defaultPolicy: "allow" });
+const acDeny = new AccessController({ defaultPolicy: "deny" });
+```
+
+## Row-Level Security
+
+Filter objects based on user context (e.g., only see data you own):
+
+```typescript
+const objects = [
+  { id: 1, owner: "user:1", name: "Warehouse A" },
+  { id: 2, owner: "user:2", name: "Warehouse B" },
+];
+
+// Register a role with row-level condition
+ac.registerRoles([
+  {
+    "@id": "role:owner-only",
+    label: { en: "Owner Only" },
+    rules: [
+      {
+        resource: "objectType",
+        resourceRef: "sc:Warehouse",
+        permissions: ["read"],
+        effect: "allow",
+        condition: {
+          property: "owner",
+          op: "eq",
+          valueVar: "$currentUser",
+        },
+      },
+    ],
+  },
+]);
+
+const filtered = ac.filter(objects, "user:1", ["role:owner-only"], "sc:Warehouse");
+// → [{ id: 1, owner: "user:1", name: "Warehouse A" }]
+```
+
+### RowSecurityCondition
+
+```typescript
+interface RowSecurityCondition {
+  property: string;            // Object property to check
+  op: "eq" | "neq" | "in" | "contains";
+  valueVar: string;            // Context variable (e.g. "$currentUser")
+}
+```
+
+## Role Inheritance
+
+Roles can extend other roles, inheriting their rules:
+
+```typescript
+ac.registerRoles([
+  {
+    "@id": "role:admin",
+    label: { en: "Admin" },
+    extends: ["role:viewer", "role:editor"],
+    rules: [
+      {
+        resource: "entity",
+        resourceRef: "*",
+        permissions: ["read", "write", "delete"],
+        effect: "allow",
+      },
+    ],
+  },
+]);
+```
+
+Circular inheritance is detected and prevented.
+
+## API Reference
+
+| Method | Description |
+|---|---|
+| `registerRole(role)` | Register a single role |
+| `registerRoles(roles)` | Register multiple roles |
+| `unregisterRole(roleId)` | Remove a role |
+| `check(userId, roleIds, action, resourceType, resourceRef)` | Check if action is allowed |
+| `filter(objects, userId, roleIds, resourceRef)` | Filter objects by row-level security |
+| `getPermissions(roleIds, resourceType, resourceRef)` | Get all permissions for roles |

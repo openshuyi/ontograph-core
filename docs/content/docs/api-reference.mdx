@@ -1,0 +1,71 @@
+---
+title: API Reference
+description: Complete module overview with import paths and key exports
+---
+
+## Module Map
+
+| Module | Import | Key Exports |
+|---|---|---|
+| Core types | `from "@ontograph/core"` | `EntityType`, `RelationType`, `AttributeDefinition`, `Constraint`, `OntologyDefinition` |
+| Builder API | `from "@ontograph/core"` | `defineEntity`, `defineRelation`, `defineAttribute` |
+| Expression | `from "@ontograph/core"` | `SafeExpressionEvaluator`, `DerivedAttributeEvaluator` |
+| Expr Types | `from "@ontograph/core"` | `Expr`, `LiteralExpr`, `CompareExpr`, `LogicalExpr`, `CallExpr`, `ConditionalExpr`, `ArithmeticExpr`, `ArrayExpr` |
+| Query Engine | `from "@ontograph/core"` | `IQueryEngine`, `ObjectSet`, `ObjectSetCompiler`, `Neo4jQueryEngine`, `Neo4jSchemaGenerator` |
+| RBAC Security | `from "@ontograph/core"` | `AccessController`, `RoleDefinition`, `PermissionCheckResult` |
+| SHACL Validation | `from "@ontograph/core"` | `SHACLShapeGenerator`, `SHACLValidator`, `exprToPropertyShape` |
+| Datasource | `from "@ontograph/core"` | `SyncEngine`, `DatasourceDefinition` |
+| OWL Export | `from "@ontograph/core"` | `OWLExporter` |
+| SHACL Export | `from "@ontograph/core"` | SHACL shapes as JSON-LD |
+| Code Generation | `from "@ontograph/core"` | `TypeGenerator` |
+| Rule Engine | `from "@ontograph/core"` | `RuleEngine` |
+| Versioning | `from "@ontograph/core"` | `VersionManager` |
+| Diff | `from "@ontograph/core"` | `OntologyDiffer` |
+| Lineage | `from "@ontograph/core"` | `LineageTracker` |
+| Validator | `from "@ontograph/core"` | `OntologyValidator` |
+| Actions | `from "@ontograph/core"` | `ActionEngine`, `ActionValidator`, `ActionAuditor` |
+| Transformer | `from "@ontograph/core"` | `OntologyTransformer` |
+
+## Architecture
+
+```
+@ontograph/core
+│
+├── Modeling Layer
+│   ├── types.ts              — Core type definitions
+│   ├── builder/              — Fluent Builder API
+│   └── validator.ts          — Ontology validation
+│
+├── Execution Layer
+│   ├── expression/           — Expr AST + safe evaluator
+│   ├── rule-engine.ts        — Rule engine (Expr-first)
+│   └── action-engine.ts      — Action engine
+│
+├── Query Layer
+│   ├── query/                — FilterOp → ObjectSet → Cypher
+│   └── datasource/           — Datasource mapping + SyncEngine
+│
+├── Security Layer
+│   └── security/             — RBAC AccessController (deny-first)
+│
+├── Standards Layer
+│   ├── validation/           — W3C SHACL generation + validation
+│   └── exporters/            — OWL 2 / JSON-LD export
+│
+├── Tooling
+│   ├── codegen/              — TypeScript type generation
+│   ├── versioning.ts         — Version management
+│   ├── diff.ts               — Structural diff
+│   └── lineage.ts            — Lineage tracking
+│
+└── Examples
+    └── examples/             — Supply chain ontology example
+```
+
+## Package Info
+
+- **npm**: `@ontograph/core`
+- **License**: MIT
+- **Runtime dependency**: `zod` only
+- **Node.js**: >= 18.0.0
+- **TypeScript**: Strict mode, ES2017 target
