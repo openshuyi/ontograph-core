@@ -31,6 +31,11 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish",
+    "release:beta": "npm version prerelease --preid beta && npm publish --tag beta",
+    "release:dry": "npm publish --dry-run",
     "docs:dev": "cd docs && bun dev",
     "docs:build": "cd docs && bun run build"
   },

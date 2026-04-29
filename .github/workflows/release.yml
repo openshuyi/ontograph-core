@@ -24,4 +24,4 @@ jobs:
 
       - run: npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
 
-      - run: npm publish --provenance --access public --tag ci --no-git-checks
+      - run: npm publish --provenance --access public --no-git-checks
