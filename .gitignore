@@ -8,3 +8,4 @@ dist/
 .mcp.json
 docs/.next/
 docs/.source/
+release.sh
