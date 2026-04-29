@@ -22,9 +22,28 @@ jobs:
 
       - run: bun run build
 
-      - run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+      - name: Verify NPM_TOKEN exists
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::NPM_TOKEN is empty! Check your repository secrets."
+            exit 1
+          fi
+          echo "NPM_TOKEN length: ${#NPM_TOKEN}"
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: npx npm publish --provenance --access public --no-git-checks
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+
+      - name: Debug npm registry
+        run: |
+          which npm
+          npm --version
+          cat .npmrc || echo "no project .npmrc"
+          cat ~/.npmrc || echo "no home .npmrc"
+
+      - run: npm publish --provenance --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
