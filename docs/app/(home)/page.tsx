@@ -341,6 +341,25 @@ export default function HomePage() {
             >
               Read Docs
             </Link>
+            <Link
+              href="/exports-demo"
+              className="inline-flex items-center gap-2 rounded-lg border border-fd-border/60 bg-fd-card/50 px-8 py-3 text-lg font-medium text-fd-foreground backdrop-blur-sm transition-all hover:bg-fd-card/70 hover:border-fd-border"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Export Demo
+            </Link>
           </div>
 
           <div className="mt-16 w-full max-w-3xl">
