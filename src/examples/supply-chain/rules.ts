@@ -5,31 +5,31 @@ import type { LogicRule } from "../../types";
  * 当库存低于安全阈值时触发预警
  */
 export const InventoryAlertRule: LogicRule = {
-	"@id": "sc:InventoryAlertRule",
-	"@type": "LogicRule",
-	label: { zh: "库存预警规则", en: "Inventory Alert Rule" },
-	description: {
-		zh: "当库存低于安全阈值时触发预警通知",
-		en: "Trigger alert when inventory falls below safety threshold",
-	},
-	category: "trigger",
-	trigger: {
-		mode: "on_change",
-		targetTypes: ["scm:InventorySnapshot"],
-		watchedAttributes: ["scm:onHandQty", "scm:availableQty"],
-		priority: 100,
-	},
-	condition: {
-		language: "typescript",
-		body: "entity.availableQty < entity.safetyStockThreshold || (entity.availableQty / entity.reorderPoint) < 0.2",
-		description: {
-			zh: "检查可用库存是否低于安全库存阈值或达到再订货点的20%",
-			en: "Check if available quantity is below safety stock threshold or reaches 20% of reorder point",
-		},
-	},
-	action: {
-		language: "typescript",
-		body: `
+  "@id": "sc:InventoryAlertRule",
+  "@type": "LogicRule",
+  label: { zh: "库存预警规则", en: "Inventory Alert Rule" },
+  description: {
+    zh: "当库存低于安全阈值时触发预警通知",
+    en: "Trigger alert when inventory falls below safety threshold",
+  },
+  category: "trigger",
+  trigger: {
+    mode: "on_change",
+    targetTypes: ["scm:InventorySnapshot"],
+    watchedAttributes: ["scm:onHandQty", "scm:availableQty"],
+    priority: 100,
+  },
+  condition: {
+    language: "typescript",
+    body: "entity.availableQty < entity.safetyStockThreshold || (entity.availableQty / entity.reorderPoint) < 0.2",
+    description: {
+      zh: "检查可用库存是否低于安全库存阈值或达到再订货点的20%",
+      en: "Check if available quantity is below safety stock threshold or reaches 20% of reorder point",
+    },
+  },
+  action: {
+    language: "typescript",
+    body: `
       const alertLevel = entity.availableQty === 0 ? 'critical' : 
                         entity.availableQty < entity.safetyStockThreshold ? 'warning' : 'info';
       emitEvent('scm:InventoryAlert', {
@@ -47,16 +47,16 @@ export const InventoryAlertRule: LogicRule = {
         message: \`库存预警: \${entity.product} 在 \${entity.warehouse} 的可用库存(\${entity.availableQty})低于阈值(\${entity.safetyStockThreshold})\`
       });
     `,
-		description: {
-			zh: "发送库存预警通知给库存经理和采购经理",
-			en: "Send inventory alert notification to inventory manager and purchasing manager",
-		},
-	},
-	conflictResolution: {
-		strategy: "highest_priority",
-	},
-	enabled: true,
-	tags: ["inventory", "alert", "threshold", "reorder"],
+    description: {
+      zh: "发送库存预警通知给库存经理和采购经理",
+      en: "Send inventory alert notification to inventory manager and purchasing manager",
+    },
+  },
+  conflictResolution: {
+    strategy: "highest_priority",
+  },
+  enabled: true,
+  tags: ["inventory", "alert", "threshold", "reorder"],
 };
 
 /**
@@ -64,31 +64,31 @@ export const InventoryAlertRule: LogicRule = {
  * 根据交付准时率、质量合格率等指标评估供应商绩效
  */
 export const SupplierRatingRule: LogicRule = {
-	"@id": "sc:SupplierRatingRule",
-	"@type": "LogicRule",
-	label: { zh: "供应商评级规则", en: "Supplier Rating Rule" },
-	description: {
-		zh: "根据交付准时率、质量合格率、响应速度等指标自动计算供应商评级",
-		en: "Automatically calculate supplier rating based on on-time delivery rate, quality pass rate, and response time",
-	},
-	category: "derivation",
-	trigger: {
-		mode: "scheduled",
-		cronExpression: "0 0 1 * *", // 每月1日执行
-		targetTypes: ["scm:Supplier"],
-		priority: 50,
-	},
-	condition: {
-		language: "typescript",
-		body: "entity.transactions && entity.transactions.length > 0",
-		description: {
-			zh: "供应商有交易记录时执行评级计算",
-			en: "Execute rating calculation when supplier has transaction records",
-		},
-	},
-	action: {
-		language: "typescript",
-		body: `
+  "@id": "sc:SupplierRatingRule",
+  "@type": "LogicRule",
+  label: { zh: "供应商评级规则", en: "Supplier Rating Rule" },
+  description: {
+    zh: "根据交付准时率、质量合格率、响应速度等指标自动计算供应商评级",
+    en: "Automatically calculate supplier rating based on on-time delivery rate, quality pass rate, and response time",
+  },
+  category: "derivation",
+  trigger: {
+    mode: "scheduled",
+    cronExpression: "0 0 1 * *", // 每月1日执行
+    targetTypes: ["scm:Supplier"],
+    priority: 50,
+  },
+  condition: {
+    language: "typescript",
+    body: "entity.transactions && entity.transactions.length > 0",
+    description: {
+      zh: "供应商有交易记录时执行评级计算",
+      en: "Execute rating calculation when supplier has transaction records",
+    },
+  },
+  action: {
+    language: "typescript",
+    body: `
       const stats = calculateSupplierStats(entity['@id'], { period: 'last_90_days' });
       const onTimeRate = stats.onTimeDeliveries / stats.totalDeliveries;
       const qualityRate = 1 - (stats.defectiveQty / stats.totalQty);
@@ -127,16 +127,16 @@ export const SupplierRatingRule: LogicRule = {
         });
       }
     `,
-		description: {
-			zh: "计算供应商综合评分并更新评级",
-			en: "Calculate supplier composite score and update rating",
-		},
-	},
-	conflictResolution: {
-		strategy: "first_match",
-	},
-	enabled: true,
-	tags: ["supplier", "rating", "performance", "evaluation"],
+    description: {
+      zh: "计算供应商综合评分并更新评级",
+      en: "Calculate supplier composite score and update rating",
+    },
+  },
+  conflictResolution: {
+    strategy: "first_match",
+  },
+  enabled: true,
+  tags: ["supplier", "rating", "performance", "evaluation"],
 };
 
 /**
@@ -144,31 +144,31 @@ export const SupplierRatingRule: LogicRule = {
  * 基于历史销售数据和市场趋势预测未来需求
  */
 export const DemandForecastRule: LogicRule = {
-	"@id": "sc:DemandForecastRule",
-	"@type": "LogicRule",
-	label: { zh: "需求预测规则", en: "Demand Forecast Rule" },
-	description: {
-		zh: "基于历史销售数据、季节性趋势和市场活动预测未来产品需求",
-		en: "Predict future product demand based on historical sales data, seasonal trends, and market activities",
-	},
-	category: "derivation",
-	trigger: {
-		mode: "scheduled",
-		cronExpression: "0 2 * * 1", // 每周一凌晨2点执行
-		targetTypes: ["scm:Product"],
-		priority: 40,
-	},
-	condition: {
-		language: "typescript",
-		body: "entity.salesHistory && entity.salesHistory.length >= 30",
-		description: {
-			zh: "产品有至少30天的销售历史数据时进行预测",
-			en: "Forecast when product has at least 30 days of sales history",
-		},
-	},
-	action: {
-		language: "typescript",
-		body: `
+  "@id": "sc:DemandForecastRule",
+  "@type": "LogicRule",
+  label: { zh: "需求预测规则", en: "Demand Forecast Rule" },
+  description: {
+    zh: "基于历史销售数据、季节性趋势和市场活动预测未来产品需求",
+    en: "Predict future product demand based on historical sales data, seasonal trends, and market activities",
+  },
+  category: "derivation",
+  trigger: {
+    mode: "scheduled",
+    cronExpression: "0 2 * * 1", // 每周一凌晨2点执行
+    targetTypes: ["scm:Product"],
+    priority: 40,
+  },
+  condition: {
+    language: "typescript",
+    body: "entity.salesHistory && entity.salesHistory.length >= 30",
+    description: {
+      zh: "产品有至少30天的销售历史数据时进行预测",
+      en: "Forecast when product has at least 30 days of sales history",
+    },
+  },
+  action: {
+    language: "typescript",
+    body: `
       const history = entity.salesHistory;
       const trends = analyzeTrends(history, { method: 'ema', period: 7 });
       const seasonality = detectSeasonality(history, { period: 365 });
@@ -228,20 +228,20 @@ export const DemandForecastRule: LogicRule = {
         });
       }
     `,
-		description: {
-			zh: "生成未来14天的需求预测并计算建议补货量",
-			en: "Generate 14-day demand forecast and calculate recommended reorder quantity",
-		},
-	},
-	conflictResolution: {
-		strategy: "merge",
-		mergeExpression: {
-			language: "typescript",
-			body: "mergeForecastResults(results)",
-		},
-	},
-	enabled: true,
-	tags: ["demand", "forecast", "prediction", "inventory-planning"],
+    description: {
+      zh: "生成未来14天的需求预测并计算建议补货量",
+      en: "Generate 14-day demand forecast and calculate recommended reorder quantity",
+    },
+  },
+  conflictResolution: {
+    strategy: "merge",
+    mergeExpression: {
+      language: "typescript",
+      body: "mergeForecastResults(results)",
+    },
+  },
+  enabled: true,
+  tags: ["demand", "forecast", "prediction", "inventory-planning"],
 };
 
 /**
@@ -249,31 +249,31 @@ export const DemandForecastRule: LogicRule = {
  * 检测产品质量指标异常，触发质量警报
  */
 export const QualityAnomalyDetectionRule: LogicRule = {
-	"@id": "sc:QualityAnomalyDetectionRule",
-	"@type": "LogicRule",
-	label: { zh: "质量异常检测规则", en: "Quality Anomaly Detection Rule" },
-	description: {
-		zh: "检测产品缺陷率、退货率等质量指标的异常波动",
-		en: "Detect abnormal fluctuations in product defect rate, return rate and other quality metrics",
-	},
-	category: "validation",
-	trigger: {
-		mode: "on_change",
-		targetTypes: ["scm:QualityInspected", "scm:Product"],
-		watchedAttributes: ["scm:defectRate", "scm:qualityGrade"],
-		priority: 90,
-	},
-	condition: {
-		language: "typescript",
-		body: "entity.defectRate > 0.05 || entity.qualityGrade === 'reject' || entity.returnRate > 0.03",
-		description: {
-			zh: "缺陷率超过5%或质量等级为拒收或退货率超过3%时触发",
-			en: "Trigger when defect rate exceeds 5% or quality grade is reject or return rate exceeds 3%",
-		},
-	},
-	action: {
-		language: "typescript",
-		body: `
+  "@id": "sc:QualityAnomalyDetectionRule",
+  "@type": "LogicRule",
+  label: { zh: "质量异常检测规则", en: "Quality Anomaly Detection Rule" },
+  description: {
+    zh: "检测产品缺陷率、退货率等质量指标的异常波动",
+    en: "Detect abnormal fluctuations in product defect rate, return rate and other quality metrics",
+  },
+  category: "validation",
+  trigger: {
+    mode: "on_change",
+    targetTypes: ["scm:QualityInspected", "scm:Product"],
+    watchedAttributes: ["scm:defectRate", "scm:qualityGrade"],
+    priority: 90,
+  },
+  condition: {
+    language: "typescript",
+    body: "entity.defectRate > 0.05 || entity.qualityGrade === 'reject' || entity.returnRate > 0.03",
+    description: {
+      zh: "缺陷率超过5%或质量等级为拒收或退货率超过3%时触发",
+      en: "Trigger when defect rate exceeds 5% or quality grade is reject or return rate exceeds 3%",
+    },
+  },
+  action: {
+    language: "typescript",
+    body: `
       const severity = entity.defectRate > 0.1 || entity.returnRate > 0.05 ? 'critical' : 
                       entity.defectRate > 0.05 || entity.returnRate > 0.03 ? 'high' : 'medium';
       
@@ -330,16 +330,16 @@ export const QualityAnomalyDetectionRule: LogicRule = {
         qualityAlertCount: (entity.qualityAlertCount || 0) + 1
       });
     `,
-		description: {
-			zh: "创建质量事件并触发相应处理流程",
-			en: "Create quality event and trigger corresponding handling process",
-		},
-	},
-	conflictResolution: {
-		strategy: "all",
-	},
-	enabled: true,
-	tags: ["quality", "anomaly", "detection", "defect", "alert"],
+    description: {
+      zh: "创建质量事件并触发相应处理流程",
+      en: "Create quality event and trigger corresponding handling process",
+    },
+  },
+  conflictResolution: {
+    strategy: "all",
+  },
+  enabled: true,
+  tags: ["quality", "anomaly", "detection", "defect", "alert"],
 };
 
 /**
@@ -347,31 +347,31 @@ export const QualityAnomalyDetectionRule: LogicRule = {
  * 监控供应商实际交货周期与承诺周期的偏差
  */
 export const LeadTimeVarianceRule: LogicRule = {
-	"@id": "sc:LeadTimeVarianceRule",
-	"@type": "LogicRule",
-	label: { zh: "交货周期偏差规则", en: "Lead Time Variance Rule" },
-	description: {
-		zh: "监控供应商实际交货周期与承诺周期的偏差，识别交付风险",
-		en: "Monitor variance between actual and promised lead times to identify delivery risks",
-	},
-	category: "trigger",
-	trigger: {
-		mode: "on_change",
-		targetTypes: ["scm:PurchaseOrder"],
-		watchedAttributes: ["scm:actualArrival", "scm:plannedArrival"],
-		priority: 60,
-	},
-	condition: {
-		language: "typescript",
-		body: "entity.actualArrival && entity.plannedArrival && (new Date(entity.actualArrival) - new Date(entity.plannedArrival)) > (24 * 60 * 60 * 1000)",
-		description: {
-			zh: "实际到达时间晚于计划到达时间超过1天时触发",
-			en: "Trigger when actual arrival is more than 1 day later than planned arrival",
-		},
-	},
-	action: {
-		language: "typescript",
-		body: `
+  "@id": "sc:LeadTimeVarianceRule",
+  "@type": "LogicRule",
+  label: { zh: "交货周期偏差规则", en: "Lead Time Variance Rule" },
+  description: {
+    zh: "监控供应商实际交货周期与承诺周期的偏差，识别交付风险",
+    en: "Monitor variance between actual and promised lead times to identify delivery risks",
+  },
+  category: "trigger",
+  trigger: {
+    mode: "on_change",
+    targetTypes: ["scm:PurchaseOrder"],
+    watchedAttributes: ["scm:actualArrival", "scm:plannedArrival"],
+    priority: 60,
+  },
+  condition: {
+    language: "typescript",
+    body: "entity.actualArrival && entity.plannedArrival && (new Date(entity.actualArrival) - new Date(entity.plannedArrival)) > (24 * 60 * 60 * 1000)",
+    description: {
+      zh: "实际到达时间晚于计划到达时间超过1天时触发",
+      en: "Trigger when actual arrival is more than 1 day later than planned arrival",
+    },
+  },
+  action: {
+    language: "typescript",
+    body: `
       const varianceDays = Math.ceil((new Date(entity.actualArrival) - new Date(entity.plannedArrival)) / (24 * 60 * 60 * 1000));
       const variancePct = Math.round((varianceDays / entity.leadTime) * 100);
       
@@ -404,16 +404,16 @@ export const LeadTimeVarianceRule: LogicRule = {
         });
       }
     `,
-		description: {
-			zh: "记录交货延迟并更新供应商统计",
-			en: "Record delivery delay and update supplier statistics",
-		},
-	},
-	conflictResolution: {
-		strategy: "highest_priority",
-	},
-	enabled: true,
-	tags: ["lead-time", "delivery", "variance", "supplier-performance"],
+    description: {
+      zh: "记录交货延迟并更新供应商统计",
+      en: "Record delivery delay and update supplier statistics",
+    },
+  },
+  conflictResolution: {
+    strategy: "highest_priority",
+  },
+  enabled: true,
+  tags: ["lead-time", "delivery", "variance", "supplier-performance"],
 };
 
 /**
@@ -421,9 +421,9 @@ export const LeadTimeVarianceRule: LogicRule = {
  * 包含所有供应链相关的逻辑规则
  */
 export const supplyChainRules: LogicRule[] = [
-	InventoryAlertRule,
-	SupplierRatingRule,
-	DemandForecastRule,
-	QualityAnomalyDetectionRule,
-	LeadTimeVarianceRule,
+  InventoryAlertRule,
+  SupplierRatingRule,
+  DemandForecastRule,
+  QualityAnomalyDetectionRule,
+  LeadTimeVarianceRule,
 ];
