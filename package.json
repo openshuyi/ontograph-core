@@ -1,6 +1,6 @@
 {
   "name": "@ontograph/core",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Enterprise-grade ontology framework — Expr AST, query engine, RBAC, SHACL validation, datasource mapping, and fluent Builder API",
   "license": "MIT",
   "type": "module",
