@@ -90,11 +90,13 @@ const results = await engine.query(
 ```typescript
 import { Neo4jSchemaGenerator } from "@ontograph/core";
 
-const generator = new Neo4jSchemaGenerator();
-const cypher = generator.generateConstraintCypher([warehouse, product]);
-// Produces statements like:
-// CREATE CONSTRAINT FOR (n:Warehouse) REQUIRE n['@id'] IS UNIQUE
-// CREATE CONSTRAINT FOR (n:Product) REQUIRE n['sc:sku'] IS UNIQUE
+const generator = new Neo4jSchemaGenerator(ontology);
+
+const statements = generator.generate(); // indexes + constraints
+// → ["CREATE CONSTRAINT Product_sku_unique IF NOT EXISTS FOR (n:Product) REQUIRE n.sku IS UNIQUE"]
+
+const full = generator.generateFull();
+// → { constraints, indexes, nodeLabels, relationshipTypes }
 ```
 
 ## ResolvedQuery

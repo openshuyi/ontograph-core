@@ -361,6 +361,34 @@ const linkShipmentOrder: ObjectLink = {
   properties: { fulfillmentRatio: 0.75 },
 };
 
+const linkShipment2Origin: ObjectLink = {
+  "@id": "scm:link-ship-origin-002",
+  "@type": "ObjectLink",
+  relationTypeRef: "scm:shippedFrom",
+  fromObjectId: "scm:shipment-002",
+  toObjectId: "scm:warehouse-bj-001",
+  label: { zh: "从北京仓发货", en: "Shipped from Beijing warehouse" },
+};
+
+const linkShipment2Dest: ObjectLink = {
+  "@id": "scm:link-ship-dest-002",
+  "@type": "ObjectLink",
+  relationTypeRef: "scm:shippedTo",
+  fromObjectId: "scm:shipment-002",
+  toObjectId: "scm:warehouse-gz-001",
+  label: { zh: "送达广州仓", en: "Delivered to Guangzhou warehouse" },
+};
+
+const linkShipment2Order: ObjectLink = {
+  "@id": "scm:link-ship-order-002",
+  "@type": "ObjectLink",
+  relationTypeRef: "scm:fulfillsOrder",
+  fromObjectId: "scm:shipment-002",
+  toObjectId: "scm:order-002",
+  label: { zh: "履约销售订单", en: "Fulfills sales order" },
+  properties: { fulfillmentRatio: 1 },
+};
+
 const supplyChainPackage: ObjectPackage = {
   "@id": "scm:supply-chain-objects",
   "@type": "ObjectPackage",
@@ -379,7 +407,14 @@ const supplyChainPackage: ObjectPackage = {
     orderPurchase,
     orderSales,
   ],
-  links: [linkShipmentOrigin, linkShipmentDest, linkShipmentOrder],
+  links: [
+    linkShipmentOrigin,
+    linkShipmentDest,
+    linkShipmentOrder,
+    linkShipment2Origin,
+    linkShipment2Dest,
+    linkShipment2Order,
+  ],
   version: "1.0.0",
 };
 
@@ -403,6 +438,13 @@ export const supplyChainObjectModel: ObjectModelDefinition = {
     orderPurchase,
     orderSales,
   ],
-  links: [linkShipmentOrigin, linkShipmentDest, linkShipmentOrder],
+  links: [
+    linkShipmentOrigin,
+    linkShipmentDest,
+    linkShipmentOrder,
+    linkShipment2Origin,
+    linkShipment2Dest,
+    linkShipment2Order,
+  ],
   packages: [supplyChainPackage],
 };

@@ -3,6 +3,15 @@ title: Fluent Builder API
 description: Define entities, relations, and attributes with a chainable TypeScript API
 ---
 
+import { Mermaid } from "../../../components/mermaid";
+import { OntologyGraph } from "../../../components/ontology-graph";
+import {
+  builderEntityOntology,
+  builderOntology,
+  mermaidClassDiagram,
+  mermaidRelationGraph,
+} from "../../../lib/ontology-examples";
+
 The Builder API provides a fluent, chainable interface for constructing ontology definitions with full TypeScript type safety.
 
 ## Import
@@ -31,6 +40,14 @@ const product = defineEntity("scm:Product", {
   .ui({ color: "#2E7D32", icon: "package", visible: true, group: "inventory" })
   .build();
 ```
+
+The entity above renders as (note `scm:skuCode` marked with `*` for required
+and 🔑 for identity, and the `BaseItem` inheritance arrow):
+
+<Mermaid
+  code={mermaidClassDiagram(builderEntityOntology)}
+  caption="defineEntity(...) result — one Product class extending BaseItem"
+/>
 
 ### EntityConfig
 
@@ -91,6 +108,13 @@ const storedIn = defineRelation("scm:storedIn", {
 | `max` | `number \| null` | No | Maximum cardinality (`null` = unlimited) |
 | `inverse` | `string` | No | Inverse relation `@id` |
 
+Combined with the entities above, the relations connect them like this:
+
+<Mermaid
+  code={mermaidRelationGraph(builderOntology)}
+  caption="scm:suppliedBy (1..n) and scm:storedIn (0..5) connecting Supplier, Product and Warehouse"
+/>
+
 ## Define Attribute
 
 ```typescript
@@ -129,3 +153,11 @@ Each builder produces a typed output:
 - `defineAttribute(...)` → `AttributeDefinition`
 
 These types can be collected into an `OntologyDefinition` for validation, SHACL generation, OWL export, and more.
+
+Collected together, the full example ontology looks like this (interactive —
+drag nodes, hover for details, edge labels show cardinality):
+
+<OntologyGraph ontology={builderOntology} />
+
+Want to build one yourself? Open the [interactive ontology editor](/editor) and
+export the result as TypeScript, Mermaid, OWL or SHACL.

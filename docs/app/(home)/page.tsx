@@ -1,323 +1,311 @@
-"use client";
-
 import Link from "next/link";
 
-const gradientPairs = [
-  ["#6366f1", "#8b5cf6"],
-  ["#06b6d4", "#3b82f6"],
-  ["#ec4899", "#8b5cf6"],
-  ["#10b981", "#06b6d4"],
-  ["#f59e0b", "#ef4444"],
-  ["#8b5cf6", "#ec4899"],
-] as const;
+/**
+ * 洛书点阵：数字 → 方点阵列
+ * 洛书九宫：4 9 2 / 3 5 7 / 8 1 6（戴九履一，左三右七，二四为肩，六八为足，五居中央）
+ * 点取方形以合 hairline 刻版语言（天圆地方，圆用在印章，不在点）。
+ */
+const LUOSHU_DOTS: Record<number, Array<[number, number]>> = {
+  1: [[1, 1]],
+  2: [
+    [0, 0],
+    [2, 2],
+  ],
+  3: [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+  ],
+  4: [
+    [0, 0],
+    [0, 2],
+    [2, 0],
+    [2, 2],
+  ],
+  5: [
+    [0, 0],
+    [0, 2],
+    [1, 1],
+    [2, 0],
+    [2, 2],
+  ],
+  6: [
+    [0, 0],
+    [0, 2],
+    [1, 0],
+    [1, 2],
+    [2, 0],
+    [2, 2],
+  ],
+  7: [
+    [0, 0],
+    [0, 2],
+    [1, 0],
+    [1, 1],
+    [1, 2],
+    [2, 0],
+    [2, 2],
+  ],
+  8: [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [1, 0],
+    [1, 2],
+    [2, 0],
+    [2, 1],
+    [2, 2],
+  ],
+  9: [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [1, 0],
+    [1, 1],
+    [1, 2],
+    [2, 0],
+    [2, 1],
+    [2, 2],
+  ],
+};
 
-interface ParticleNode {
-  x: number;
-  y: number;
-}
-
-const staticNodes: ParticleNode[] = Array.from({ length: 120 }, () => ({
-  x: Math.random() * 1920,
-  y: Math.random() * 1080,
-}));
-
-const ConnectionLayer = () => (
-  <svg
-    aria-hidden="true"
-    className="absolute inset-0 w-full h-full"
-    style={{ zIndex: 0 }}
-  >
-    <defs>
-      {gradientPairs.map(([c1, c2], i) => (
-        <linearGradient
-          key={`grad-${i}`}
-          id={`cg-${i}`}
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <stop offset="0%" stopColor={c1} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={c2} stopOpacity="0.3" />
-        </linearGradient>
-      ))}
-    </defs>
-    {staticNodes.flatMap((n, i) => {
-      const gk = i % gradientPairs.length;
-      const targetA = staticNodes[(i + 7) % staticNodes.length];
-      const targetB = staticNodes[(i + 13) % staticNodes.length];
-      return [
-        <line
-          key={`la-${i}`}
-          x1={n.x}
-          y1={n.y}
-          x2={targetA.x}
-          y2={targetA.y}
-          stroke={`url(#cg-${gk})`}
-          strokeWidth="0.6"
-        />,
-        <line
-          key={`lb-${i}`}
-          x1={n.x}
-          y1={n.y}
-          x2={targetB.x}
-          y2={targetB.y}
-          stroke={`url(#cg-${gk})`}
-          strokeWidth="0.4"
-        />,
-      ];
-    })}
-  </svg>
-);
-
-const NodeDotsLayer = () => (
-  <svg aria-hidden="true" className="absolute inset-0 w-full h-full">
-    <defs>
-      {gradientPairs.map(([c1], i) => (
-        <radialGradient
-          key={`gr-${i}`}
-          id={`ng-${i}`}
-          cx="50%"
-          cy="50%"
-          r="50%"
-        >
-          <stop offset="0%" stopColor={c1} stopOpacity="0.8" />
-          <stop offset="100%" stopColor={c1} stopOpacity="0" />
-        </radialGradient>
-      ))}
-    </defs>
-    {staticNodes.map((n, i) => {
-      const gk = i % gradientPairs.length;
-      const r = 1.5 + (i % 3);
-      return (
-        <g key={`d-${i}`}>
-          <circle
-            cx={n.x}
-            cy={n.y}
-            r={r * 3}
-            fill={`url(#ng-${gk})`}
-            opacity="0.15"
+const LuoshuDots = ({ count }: { count: number }) => {
+  const on = LUOSHU_DOTS[count] ?? [];
+  return (
+    <div className="grid grid-cols-3 gap-1.5" aria-hidden="true">
+      {Array.from({ length: 9 }, (_, i) => {
+        const row = Math.floor(i / 3);
+        const col = i % 3;
+        const filled = on.some(([r, c]) => r === row && c === col);
+        return (
+          <span
+            key={i}
+            className={
+              filled ? "h-1.5 w-1.5 bg-fd-foreground/35" : "h-1.5 w-1.5"
+            }
           />
-          <circle
-            cx={n.x}
-            cy={n.y}
-            r={r}
-            fill={gradientPairs[gk][0]}
-            opacity="0.4"
-          />
-        </g>
-      );
-    })}
-  </svg>
-);
+        );
+      })}
+    </div>
+  );
+};
 
 const features = [
   {
+    title: "Expr AST Safe Evaluation",
+    description:
+      "Pure function recursion, zero eval — no prototype pollution or injection risk.",
     icon: (
       <svg
         className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        strokeWidth={1.5}
         aria-hidden="true"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
           d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
         />
       </svg>
     ),
-    bg: "bg-indigo-500/10",
-    text: "text-indigo-500",
-    title: "Expr AST Safe Evaluation",
-    description:
-      "Pure function recursion, zero eval — no prototype pollution or injection risk.",
   },
   {
+    title: "Abstract Query Engine",
+    description:
+      "FilterOp to ObjectSet to Neo4j Cypher compilation with pluggable backends.",
     icon: (
       <svg
         className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        strokeWidth={1.5}
         aria-hidden="true"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
           d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
         />
       </svg>
     ),
-    bg: "bg-cyan-500/10",
-    text: "text-cyan-500",
-    title: "Abstract Query Engine",
-    description:
-      "FilterOp to ObjectSet to Neo4j Cypher compilation with pluggable backends.",
   },
   {
+    title: "RBAC + Row-Level Security",
+    description:
+      "Deny-first policy with granular permissions and row-level security conditions.",
     icon: (
       <svg
         className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        strokeWidth={1.5}
         aria-hidden="true"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
         />
       </svg>
     ),
-    bg: "bg-violet-500/10",
-    text: "text-violet-500",
-    title: "RBAC + Row-Level Security",
-    description:
-      "Deny-first policy with granular permissions and row-level security conditions.",
   },
   {
+    title: "W3C SHACL Validation",
+    description:
+      "Standard Shapes generation and validation for data integrity guarantees.",
     icon: (
       <svg
         className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        strokeWidth={1.5}
         aria-hidden="true"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
         />
       </svg>
     ),
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-500",
-    title: "W3C SHACL Validation",
-    description:
-      "Standard Shapes generation and validation for data integrity guarantees.",
   },
   {
+    title: "Fluent Builder API",
+    description:
+      "defineEntity().attr().rel().constraint().build() with full TypeScript inference.",
     icon: (
       <svg
         className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        strokeWidth={1.5}
         aria-hidden="true"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
           d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm10 0a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"
         />
       </svg>
     ),
-    bg: "bg-pink-500/10",
-    text: "text-pink-500",
-    title: "Fluent Builder API",
-    description:
-      "defineEntity().attr().rel().constraint().build() with full TypeScript inference.",
   },
   {
+    title: "350+ Supply Chain Ontology",
+    description:
+      "Pre-built TMS, WMS, OMS, BMS reference models ready for production.",
     icon: (
       <svg
         className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        strokeWidth={1.5}
         aria-hidden="true"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
           d="M13 10V3L4 14h7v7l9-11h-7z"
         />
       </svg>
     ),
-    bg: "bg-amber-500/10",
-    text: "text-amber-500",
-    title: "350+ Supply Chain Ontology",
-    description:
-      "Pre-built TMS, WMS, OMS, BMS reference models ready for production.",
   },
 ] as const;
 
+/**
+ * 六种导出格式落户九宫外圈六格（中宫留空）。
+ * 每格标注洛书数与后天八卦方位（点位与洛书数严格对应）：
+ *   1 坎·北  2 坤·西南  3 震·东  4 巽·东南  6 乾·西北  7 兑·西  8 艮·东北  9 离·南
+ */
 const exportFormats = [
   {
     format: "OWL 2 Turtle",
-    icon: "U0001F989",
+    numeral: "四",
+    direction: "巽 · 东南",
+    gridArea: "1 / 1",
     description: "W3C standard ontology serialization",
   },
   {
     format: "SHACL Shapes",
-    icon: "\u2705",
+    numeral: "二",
+    direction: "坤 · 西南",
+    gridArea: "1 / 3",
     description: "W3C data validation shapes",
   },
   {
     format: "Neo4j Cypher",
-    icon: "U0001F5C4\uFE0F",
+    numeral: "八",
+    direction: "艮 · 东北",
+    gridArea: "3 / 1",
     description: "Database constraints and DDL",
   },
   {
     format: "JSON Schema",
-    icon: "U0001F4CB",
+    numeral: "六",
+    direction: "乾 · 西北",
+    gridArea: "3 / 3",
     description: "Draft 2020-12 with $defs",
   },
   {
     format: "Mermaid",
-    icon: "U0001F4CA",
+    numeral: "三",
+    direction: "震 · 东",
+    gridArea: "2 / 1",
     description: "Renders natively in GitHub READMEs",
   },
   {
     format: "Graphviz DOT",
-    icon: "U0001F535",
+    numeral: "七",
+    direction: "兑 · 西",
+    gridArea: "2 / 3",
     description: "Publication-quality diagrams",
   },
-];
+] as const;
 
 export default function HomePage() {
   return (
     <div>
-      <section className="relative overflow-hidden border-b border-fd-border/40 min-h-[85vh]">
-        <div className="absolute inset-0 bg-fd-background">
-          <ConnectionLayer />
-          <NodeDotsLayer />
-          <div className="absolute inset-0 bg-gradient-to-b from-fd-background via-fd-background/80 to-fd-background" />
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden border-b border-fd-border px-6 py-24 md:min-h-[85vh] md:py-28">
+        <div
+          aria-hidden="true"
+          className="pattern-luoshu pointer-events-none absolute inset-0 opacity-60 [-webkit-mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_70%)] [mask-image:radial-gradient(ellipse_at_center,black_10%,transparent_70%)]"
+        />
+
+        <div className="absolute right-6 top-6 hidden md:right-10 md:top-10 md:block">
+          <div className="seal h-20 w-14 text-2xl">本体</div>
         </div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-24 min-h-[85vh]">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-fd-border/50 bg-fd-muted/50 px-4 py-1.5 text-sm text-fd-muted-foreground backdrop-blur-sm">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-sm border border-fd-border px-3 py-1.5 text-xs tracking-[0.02em] text-fd-muted-foreground">
+            <span className="h-1.5 w-1.5 bg-fd-primary" aria-hidden="true" />
             v0.0.1 — Now available on npm
           </div>
 
-          <h1 className="mb-6 max-w-4xl text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
-            <div>Define your world</div>
-            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-              in pure TypeScript
-            </div>
+          <h1 className="font-serif text-5xl font-semibold leading-[1.15] tracking-tight sm:text-6xl md:text-7xl">
+            以代码定义世界
+            <span className="mt-5 block font-sans text-xl font-normal tracking-normal text-fd-muted-foreground sm:text-2xl">
+              Define your world in pure TypeScript
+            </span>
           </h1>
 
-          <p className="mb-10 max-w-2xl text-xl text-fd-muted-foreground">
+          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-fd-muted-foreground">
             An enterprise-grade ontology framework — type-safe entities,
             relations, constraints and rules. One definition exports to OWL 2,
             SHACL, Neo4j, JSON Schema and Mermaid.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/docs/quick-start"
-              className="group inline-flex items-center gap-2 rounded-lg bg-fd-primary px-8 py-3 text-lg font-medium text-fd-primary-foreground transition-all hover:bg-fd-primary/90 hover:shadow-lg hover:shadow-fd-primary/20"
+              className="group inline-flex items-center gap-2 rounded-sm bg-fd-primary px-6 py-3 font-medium text-fd-primary-foreground transition-colors hover:bg-fd-primary/90"
             >
               Get Started
               <svg
@@ -325,54 +313,86 @@ export default function HomePage() {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth={1.5}
                 aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M13 7l5 5m0 0l-5 5m5-5H6"
                 />
               </svg>
             </Link>
             <Link
               href="/docs"
-              className="inline-flex items-center gap-2 rounded-lg border border-fd-border bg-fd-muted/50 px-8 py-3 text-lg font-medium text-fd-foreground backdrop-blur-sm transition-all hover:bg-fd-muted hover:border-fd-border/80"
+              className="inline-flex items-center gap-2 rounded-sm border border-fd-border px-6 py-3 font-medium text-fd-foreground transition-colors hover:border-fd-foreground/40"
             >
               Read Docs
             </Link>
             <Link
               href="/exports-demo"
-              className="inline-flex items-center gap-2 rounded-lg border border-fd-border/60 bg-fd-card/50 px-8 py-3 text-lg font-medium text-fd-foreground backdrop-blur-sm transition-all hover:bg-fd-card/70 hover:border-fd-border"
+              className="inline-flex items-center gap-2 rounded-sm border border-fd-border px-6 py-3 font-medium text-fd-foreground transition-colors hover:border-fd-foreground/40"
             >
               <svg
                 className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth={1.5}
+                focusable="false"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                 />
               </svg>
               Export Demo
             </Link>
+            <Link
+              href="/editor"
+              className="inline-flex items-center gap-2 rounded-sm border border-fd-border px-6 py-3 font-medium text-fd-foreground transition-colors hover:border-fd-foreground/40"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                focusable="false"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M11 4a2 2 0 114 0v1h1a2 2 0 012 2v1h1a2 2 0 110 4h-1v1a2 2 0 01-2 2h-1v1a2 2 0 11-4 0v-1H7a2 2 0 01-2-2v-1H4a2 2 0 110-4h1V7a2 2 0 012-2h1V4a2 2 0 012-2z"
+                />
+              </svg>
+              Ontology Editor
+            </Link>
           </div>
 
-          <div className="mt-16 w-full max-w-3xl">
-            <div className="overflow-hidden rounded-xl border border-fd-border/60 bg-fd-card/80 backdrop-blur-md shadow-2xl shadow-fd-primary/5">
-              <div className="flex items-center gap-2 border-b border-fd-border/50 px-4 py-3">
-                <span className="h-3 w-3 rounded-full bg-red-500/80" />
-                <span className="h-3 w-3 rounded-full bg-yellow-500/80" />
-                <span className="h-3 w-3 rounded-full bg-green-500/80" />
-                <span className="ml-2 text-xs font-mono text-fd-muted-foreground">
+          <div className="mt-16 w-full text-left">
+            <div className="overflow-hidden rounded-sm border border-fd-border bg-fd-card">
+              <div className="flex items-center gap-1.5 border-b border-fd-border px-4 py-2.5">
+                <span
+                  className="h-2.5 w-2.5 border border-fd-border"
+                  aria-hidden="true"
+                />
+                <span
+                  className="h-2.5 w-2.5 border border-fd-border"
+                  aria-hidden="true"
+                />
+                <span
+                  className="h-2.5 w-2.5 border border-fd-border"
+                  aria-hidden="true"
+                />
+                <span className="ml-2 font-mono text-xs text-fd-muted-foreground">
                   ontology.ts
                 </span>
               </div>
-              <pre className="overflow-x-auto p-6 text-left text-sm leading-relaxed">
+              <pre className="overflow-x-auto p-6 font-mono text-sm leading-relaxed">
                 <code>{`import { defineEntity, defineRelation, OntologyValidator } from "@ontograph/core";
 
 const warehouse = defineEntity("sc:Warehouse", {
@@ -395,30 +415,31 @@ const product = defineEntity("sc:Product", {
         </div>
       </section>
 
+      {/* ── 六合 · 特性 ───────────────────────────────────────── */}
       <section className="px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            <div className="mb-4 inline-flex items-center gap-2 text-sm text-fd-muted-foreground">
+              <span className="h-1.5 w-1.5 bg-fd-primary" aria-hidden="true" />
+              六合
+            </div>
+            <h2 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
               Everything you need for enterprise ontologies
             </h2>
-            <p className="text-lg text-fd-muted-foreground">
+            <p className="mt-4 text-lg text-fd-muted-foreground">
               Inspired by Palantir Ontology, built for the open-source world.
             </p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
               <div
-                key={f.title}
-                className="group overflow-hidden rounded-xl border border-fd-border/60 bg-fd-card/50 p-6 backdrop-blur-sm transition-all hover:border-fd-border hover:bg-fd-card/70 hover:shadow-lg"
+                key={feature.title}
+                className="group rounded-sm border border-fd-border p-6 transition-colors hover:border-fd-foreground/40"
               >
-                <div
-                  className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg ${f.bg} ${f.text}`}
-                >
-                  {f.icon}
-                </div>
-                <h3 className="mb-2 text-lg font-semibold">{f.title}</h3>
-                <p className="text-sm text-fd-muted-foreground">
-                  {f.description}
+                <div className="mb-4 text-fd-primary">{feature.icon}</div>
+                <h3 className="text-lg font-semibold">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-fd-muted-foreground">
+                  {feature.description}
                 </p>
               </div>
             ))}
@@ -426,51 +447,105 @@ const product = defineEntity("sc:Product", {
         </div>
       </section>
 
-      <section className="border-t border-fd-border/40 px-6 py-24">
-        <div className="mx-auto max-w-6xl">
+      {/* ── 九宫 · 一源多出 ───────────────────────────────────── */}
+      <section className="border-t border-fd-border px-6 py-24">
+        <div className="mx-auto max-w-5xl">
           <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            <div className="mb-4 inline-flex items-center gap-2 text-sm text-fd-muted-foreground">
+              <span className="h-1.5 w-1.5 bg-fd-primary" aria-hidden="true" />
+              九宫
+            </div>
+            <h2 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
               One definition, multiple outputs
             </h2>
-            <p className="text-lg text-fd-muted-foreground">
+            <p className="mt-4 text-lg text-fd-muted-foreground">
               Define your ontology once in TypeScript — export to any format.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {exportFormats.map((e) => (
+
+          <div className="jiugong">
+            {exportFormats.map((item) => (
               <div
-                key={e.format}
-                className="flex items-start gap-4 rounded-xl border border-fd-border/40 bg-fd-muted/30 p-5 transition-all hover:bg-fd-muted/50"
+                key={item.format}
+                style={{ gridArea: item.gridArea }}
+                className="group"
               >
-                <div className="shrink-0 text-2xl">{e.icon}</div>
-                <div>
-                  <h3 className="font-semibold">{e.format}</h3>
-                  <p className="text-sm text-fd-muted-foreground">
-                    {e.description}
-                  </p>
+                <div className="flex h-full flex-col justify-between gap-8 p-4 transition-colors group-hover:bg-fd-muted sm:p-6">
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-serif text-lg text-fd-primary">
+                      {item.numeral}
+                    </span>
+                    <span className="text-xs text-fd-muted-foreground">
+                      {item.direction}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{item.format}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-fd-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
+
+            {/* 上中宫 · 九·离 */}
+            <div
+              style={{ gridArea: "1 / 2" }}
+              className="grid place-items-center gap-3 p-6"
+            >
+              <LuoshuDots count={9} />
+              <span className="font-serif text-xs text-fd-muted-foreground">
+                九 · 离
+              </span>
+            </div>
+
+            {/* 中宫（5）留空 · 品牌落款 */}
+            <div className="zhong-gong grid place-items-center p-6">
+              <div className="seal h-16 w-16 text-lg">洛书</div>
+            </div>
+
+            {/* 下中宫 · 一·坎 */}
+            <div
+              style={{ gridArea: "3 / 2" }}
+              className="grid place-items-center gap-3 p-6"
+            >
+              <LuoshuDots count={1} />
+              <span className="font-serif text-xs text-fd-muted-foreground">
+                一 · 坎
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="border-t border-fd-border/40 px-6 py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+      {/* ── CTA ──────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden border-t border-fd-border px-6 py-24">
+        <div
+          aria-hidden="true"
+          className="pattern-hui pointer-events-none absolute inset-0 opacity-[0.04]"
+        />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <h2 className="font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
             Ready to define your world?
           </h2>
-          <p className="mb-8 text-lg text-fd-muted-foreground">
+          <p className="mt-4 text-lg text-fd-muted-foreground">
             Get started in minutes with a type-safe ontology framework.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/docs/quick-start"
-              className="inline-flex items-center gap-2 rounded-lg bg-fd-primary px-8 py-3 font-medium text-fd-primary-foreground transition-all hover:bg-fd-primary/90"
+              className="rounded-sm bg-fd-primary px-6 py-3 font-medium text-fd-primary-foreground transition-colors hover:bg-fd-primary/90"
             >
               Quick Start
             </Link>
-            <div className="font-mono text-sm rounded-lg border border-fd-border px-4 py-3 bg-fd-muted/30 select-all">
+            <div className="select-all rounded-sm border border-fd-border bg-fd-muted/40 px-4 py-3 font-mono text-sm">
+              <span
+                className="mr-2 select-none text-fd-muted-foreground"
+                aria-hidden="true"
+              >
+                $
+              </span>
               bun add @ontograph/core
             </div>
           </div>

@@ -314,4 +314,83 @@ export const bmsRelationTypes: RelationType[] = [
     range: "scm:TaxRule",
     inverse: "scm:appliesToRegion",
   },
+  {
+    "@id": "scm:createsInvoice",
+    "@type": "RelationType",
+    label: { zh: "生成发票", en: "Creates Invoice" },
+    domain: "scm:InvoiceGenerated",
+    range: "scm:Invoice",
+    description: {
+      zh: "发票生成事件产生的发票",
+      en: "Invoice produced by the invoice generated event",
+    },
+  },
+  {
+    "@id": "scm:settlesPayment",
+    "@type": "RelationType",
+    label: { zh: "完成结算", en: "Settles Payment" },
+    domain: "scm:PaymentSettled",
+    range: "scm:SettlementRecord",
+    description: {
+      zh: "付款完成事件对应的结算记录",
+      en: "Settlement record settled by the payment event",
+    },
+  },
+  {
+    "@id": "scm:issuesCreditNote",
+    "@type": "RelationType",
+    label: { zh: "签发贷项通知", en: "Issues Credit Note" },
+    domain: "scm:CreditNoteIssued",
+    range: "scm:CreditNote",
+    description: {
+      zh: "贷项通知签发事件产生的贷项通知",
+      en: "Credit note issued by the credit note event",
+    },
+  },
+  {
+    "@id": "scm:disputeOnInvoice",
+    "@type": "RelationType",
+    label: { zh: "争议针对发票", en: "Dispute On Invoice" },
+    domain: "scm:DisputeRaised",
+    range: "scm:Invoice",
+    description: {
+      zh: "争议提起事件针对的发票",
+      en: "Invoice disputed by the dispute raised event",
+    },
+  },
+  {
+    "@id": "scm:resolvesDispute",
+    "@type": "RelationType",
+    label: { zh: "解决争议", en: "Resolves Dispute" },
+    domain: "scm:DisputeResolved",
+    range: "scm:DisputeRaised",
+    inverse: "scm:disputeResolvedBy",
+    description: {
+      zh: "争议解决事件解决的争议提起事件",
+      en: "Dispute raised event resolved by the resolution event",
+    },
+  },
+  {
+    "@id": "scm:disputeResolvedBy",
+    "@type": "RelationType",
+    label: { zh: "争议被解决", en: "Dispute Resolved By" },
+    domain: "scm:DisputeRaised",
+    range: "scm:DisputeResolved",
+    inverse: "scm:resolvesDispute",
+    description: {
+      zh: "争议提起事件被哪个解决事件处理",
+      en: "Resolution event that settled the dispute",
+    },
+  },
+  {
+    "@id": "scm:reconcilesSettlement",
+    "@type": "RelationType",
+    label: { zh: "完成对账", en: "Reconciles Settlement" },
+    domain: "scm:ReconciliationCompleted",
+    range: "scm:SettlementRecord",
+    description: {
+      zh: "对账完成事件对应的结算记录",
+      en: "Settlement record reconciled by the reconciliation event",
+    },
+  },
 ];

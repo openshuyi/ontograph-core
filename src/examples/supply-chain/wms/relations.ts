@@ -387,4 +387,48 @@ export const wmsRelationTypes: RelationType[] = [
     domain: "scm:ReceivingRecord",
     range: "scm:InboundOrder",
   },
+  {
+    "@id": "scm:completesReceiving",
+    "@type": "RelationType",
+    label: { zh: "完成收货", en: "Completes Receiving" },
+    domain: "scm:ReceivingCompleted",
+    range: "scm:InboundOrder",
+    description: {
+      zh: "收货完成事件对应的入库单",
+      en: "Inbound order completed by the receiving event",
+    },
+  },
+  {
+    "@id": "scm:completesPutaway",
+    "@type": "RelationType",
+    label: { zh: "完成上架", en: "Completes Putaway" },
+    domain: "scm:PutawayCompleted",
+    range: "scm:PutawayTask",
+    description: {
+      zh: "上架完成事件对应的上架任务",
+      en: "Putaway task completed by the putaway event",
+    },
+  },
+  {
+    "@id": "scm:crossDockForInbound",
+    "@type": "RelationType",
+    label: { zh: "越库对应入库", en: "Cross Dock For Inbound" },
+    domain: "scm:CrossDockReceived",
+    range: "scm:InboundOrder",
+    description: {
+      zh: "越库收货事件对应的入库单",
+      en: "Inbound order received via cross-docking",
+    },
+  },
+  {
+    "@id": "scm:completesKitting",
+    "@type": "RelationType",
+    label: { zh: "完成组套", en: "Completes Kitting" },
+    domain: "scm:KittingCompleted",
+    range: "scm:KittingTask",
+    description: {
+      zh: "组套完成事件对应的组套任务",
+      en: "Kitting task completed by the kitting event",
+    },
+  },
 ];

@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import type { Nodes as HastNodes } from "hast";
+import { toJsxRuntime } from "hast-util-to-jsx-runtime";
+import type { ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import * as JsxRuntime from "react/jsx-runtime";
+import { Mermaid } from "@/components/mermaid";
 import { INITIAL_STATE } from "@/lib/editor-types";
 import {
-  generateOWL,
-  generateSHACL,
-  generateMermaid,
-  generateTypeScript,
   generateDot,
   generateJsonSchema,
+  generateMermaid,
   generateNeo4jCypher,
+  generateOWL,
+  generateSHACL,
 } from "@/lib/export-formats";
 
 type ExportFormat =
@@ -26,8 +30,26 @@ interface FormatInfo {
   description: string;
   extension: string;
   mimeType: string;
+  /** 洛书九宫数（1–9）。 */
+  luoshu: number;
+  /** 后天八卦卦名与卦象。 */
+  trigram: string;
 }
 
+/*
+ * 洛书九宫（后天八卦）↔ 导出格式映射
+ *
+ *   4 巽 ☴   9 离 ☲   2 坤 ☷      东南 · 发布    南 · 明察    西南 · 承载
+ *   3 震 ☳   5 中  ·   7 兑 ☱      东   · 生发    中宫（本体）  西   · 呈现
+ *   8 艮 ☶   1 坎 ☵   6 乾 ☰      东北 · 边界    北   · 数据流  西北 · 规则
+ *
+ *   OWL          → 4 巽（东南，木）：对外发布、传播的本体定义
+ *   SHACL        → 9 离（南，火）  ：明察照见，形状校验
+ *   JSON Schema  → 6 乾（西北，金）：规则与权威，数据契约
+ *   Mermaid      → 7 兑（西，金）  ：言语呈现，图示
+ *   Graphviz DOT → 3 震（东，木）  ：生发展开，图结构
+ *   Neo4j Cypher → 1 坎（北，水）  ：深流数据，数据库查询
+ */
 const FORMATS: FormatInfo[] = [
   {
     id: "owl",
@@ -35,6 +57,8 @@ const FORMATS: FormatInfo[] = [
     description: "W3C OWL 2 ontology in Turtle format",
     extension: "ttl",
     mimeType: "text/turtle",
+    luoshu: 4,
+    trigram: "巽 ☴",
   },
   {
     id: "shacl",
@@ -42,6 +66,8 @@ const FORMATS: FormatInfo[] = [
     description: "W3C SHACL shapes for validation",
     extension: "ttl",
     mimeType: "text/turtle",
+    luoshu: 9,
+    trigram: "离 ☲",
   },
   {
     id: "jsonschema",
@@ -49,6 +75,8 @@ const FORMATS: FormatInfo[] = [
     description: "JSON Schema Draft 2020-12",
     extension: "json",
     mimeType: "application/json",
+    luoshu: 6,
+    trigram: "乾 ☰",
   },
   {
     id: "mermaid",
@@ -56,6 +84,8 @@ const FORMATS: FormatInfo[] = [
     description: "Mermaid class diagram syntax",
     extension: "mmd",
     mimeType: "text/plain",
+    luoshu: 7,
+    trigram: "兑 ☱",
   },
   {
     id: "dot",
@@ -63,6 +93,8 @@ const FORMATS: FormatInfo[] = [
     description: "Graphviz DOT format for diagrams",
     extension: "dot",
     mimeType: "text/plain",
+    luoshu: 3,
+    trigram: "震 ☳",
   },
   {
     id: "neo4j",
@@ -70,6 +102,8 @@ const FORMATS: FormatInfo[] = [
     description: "Neo4j Cypher DDL statements",
     extension: "cypher",
     mimeType: "text/plain",
+    luoshu: 1,
+    trigram: "坎 ☵",
   },
 ];
 
@@ -92,100 +126,43 @@ function getGeneratedOutput(format: ExportFormat): string {
   }
 }
 
-function MermaidPreview({ code }: { code: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const renderMermaid = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const mermaid = (await import("mermaid")).default;
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "dark",
-          securityLevel: "strict",
-          class: {
-            useMaxWidth: true,
-          },
-        });
-        const id = `mermaid-${Date.now()}`;
-        const { svg } = await mermaid.render(id, code);
-        if (containerRef.current) {
-          containerRef.current.innerHTML = svg;
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to render diagram");
-      } finally {
-        setLoading(false);
-      }
-    };
-    renderMermaid();
-  }, [code]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-2 text-gray-400">
-          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <span className="text-sm">Rendering diagram...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <svg className="w-8 h-8 text-red-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm text-red-400">Failed to render diagram</p>
-          <p className="text-xs text-gray-500 mt-1">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      ref={containerRef}
-      className="mermaid-preview flex items-center justify-center p-4"
-    />
-  );
-}
-
 function CodeBlock({ code, language }: { code: string; language: string }) {
-  const [highlighted, setHighlighted] = useState<string>(code);
+  const [tree, setTree] = useState<HastNodes | null>(null);
 
   useEffect(() => {
     const highlight = async () => {
       try {
-        const { codeToHtml } = await import("shiki");
-        const html = await codeToHtml(code, {
+        const { codeToHast } = await import("shiki");
+        const hast = await codeToHast(code, {
           lang: language,
-          theme: "github-dark",
+          themes: { light: "github-light", dark: "github-dark" },
         });
-        setHighlighted(html);
+        setTree(hast);
       } catch {
-        setHighlighted(`<pre class="shiki"><code>${code}</code></pre>`);
+        setTree(null);
       }
     };
     highlight();
   }, [code, language]);
 
-  return (
-    <div
-      className="h-full overflow-auto"
-      dangerouslySetInnerHTML={{ __html: highlighted }}
-    />
-  );
+  if (!tree) {
+    return (
+      <div className="h-full overflow-auto">
+        <pre className="shiki">
+          <code>{code}</code>
+        </pre>
+      </div>
+    );
+  }
+
+  const highlighted = toJsxRuntime(tree, {
+    Fragment,
+    jsx: JsxRuntime.jsx,
+    jsxs: JsxRuntime.jsxs,
+    development: false,
+  }) as ReactNode;
+
+  return <div className="h-full overflow-auto">{highlighted}</div>;
 }
 
 export default function ExportsDemoPage() {
@@ -240,134 +217,160 @@ export default function ExportsDemoPage() {
   }, [output, currentFormat]);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-950 text-white">
+    <div className="flex h-screen flex-col bg-fd-background font-sans text-fd-foreground">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm flex-shrink-0">
+      <header className="flex flex-shrink-0 items-center justify-between border-b border-fd-border bg-fd-card px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
+          <div
+            className="seal h-9 w-9 text-[12px]"
+            role="img"
+            aria-label="本体"
+          >
+            本体
           </div>
           <div>
-            <h1 className="text-sm font-bold tracking-tight">Export Demo</h1>
-            <p className="text-[10px] text-gray-500">Multi-format ontology export preview</p>
+            <h1 className="font-serif text-sm font-semibold tracking-wide">
+              导出演示
+            </h1>
+            <p className="text-[10px] tracking-[0.12em] text-fd-muted-foreground">
+              六种格式 · 本体导出预览
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-purple-500" />
-              {INITIAL_STATE.entities.length} entities
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
-              {INITIAL_STATE.relations.length} relations
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              {INITIAL_STATE.constraints.length} constraints
-            </span>
-          </div>
+        <div className="flex items-center gap-4 text-xs text-fd-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 flex-shrink-0 bg-[var(--zh-success)]" />
+            {INITIAL_STATE.entities.length} 实体
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 flex-shrink-0 bg-[var(--zh-qing-600)]" />
+            {INITIAL_STATE.relations.length} 关系
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 flex-shrink-0 bg-[var(--zh-warning)]" />
+            {INITIAL_STATE.constraints.length} 约束
+          </span>
         </div>
-      </div>
+      </header>
 
       {/* Main content */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex min-h-0 flex-1">
         {/* Left panel: Format selector */}
-        <div className="w-72 border-r border-gray-800 bg-gray-900/30 flex flex-col flex-shrink-0">
-          <div className="px-4 py-3 border-b border-gray-800">
-            <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Export Formats
+        <aside className="flex w-72 flex-shrink-0 flex-col border-r border-fd-border bg-fd-muted">
+          <div className="border-b border-fd-border px-4 py-3">
+            <h2 className="font-serif text-xs tracking-[0.24em] text-fd-muted-foreground">
+              导出格式
             </h2>
           </div>
 
-          <div className="p-3 space-y-2 overflow-y-auto">
-            {FORMATS.map((format) => (
-              <button
-                key={format.id}
-                type="button"
-                onClick={() => setSelectedFormat(format.id)}
-                className={`w-full px-3 py-3 rounded-lg text-left transition-all ${
-                  selectedFormat === format.id
-                    ? "bg-blue-500/15 border border-blue-500/30"
-                    : "border border-transparent hover:bg-gray-800/50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      selectedFormat === format.id ? "bg-blue-400" : "bg-gray-600"
+          <div className="space-y-px overflow-y-auto p-3">
+            {FORMATS.map((format) => {
+              const selected = selectedFormat === format.id;
+              return (
+                <button
+                  key={format.id}
+                  type="button"
+                  onClick={() => setSelectedFormat(format.id)}
+                  className={`flex w-full items-center gap-3 border-l-2 px-3 py-3 text-left transition-colors ${
+                    selected
+                      ? "border-fd-primary"
+                      : "border-transparent hover:bg-fd-card"
+                  }`}
+                >
+                  <span
+                    className={`w-4 flex-shrink-0 text-center font-serif text-lg leading-none ${
+                      selected ? "text-fd-primary" : "text-fd-muted-foreground"
                     }`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-xs font-medium truncate ${
-                        selectedFormat === format.id ? "text-blue-400" : "text-gray-300"
-                      }`}
-                    >
-                      {format.name}
+                  >
+                    {format.luoshu}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <span
+                        className={`truncate text-xs font-medium ${
+                          selected
+                            ? "text-fd-foreground"
+                            : "text-fd-muted-foreground"
+                        }`}
+                      >
+                        {format.name}
+                      </span>
+                      <span className="flex-shrink-0 font-serif text-[10px] text-fd-muted-foreground">
+                        {format.trigram}
+                      </span>
                     </div>
-                    <div className="text-[10px] text-gray-500 truncate mt-0.5">
+                    <div className="mt-0.5 truncate text-[10px] text-fd-muted-foreground">
                       {format.description}
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {/* Format info card */}
-          <div className="mt-auto p-4 border-t border-gray-800">
-            <div className="rounded-lg bg-gray-800/50 border border-gray-700/50 p-3">
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">
-                Selected Format
+          <div className="mt-auto border-t border-fd-border p-4">
+            <div className="rounded-sm border border-fd-border bg-fd-card p-3">
+              <div className="mb-2 font-serif text-[10px] tracking-[0.2em] text-fd-muted-foreground">
+                当前格式
               </div>
-              <div className="text-xs font-medium text-gray-200">{currentFormat.name}</div>
-              <div className="text-[10px] text-gray-500 mt-1">{currentFormat.description}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate font-serif text-sm text-fd-foreground">
+                  {currentFormat.name}
+                </span>
+                <span className="flex-shrink-0 font-serif text-xs text-fd-primary">
+                  {currentFormat.trigram}
+                </span>
+              </div>
+              <div className="mt-1 text-[10px] leading-relaxed text-fd-muted-foreground">
+                {currentFormat.description}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="rounded-sm border border-fd-border px-1.5 py-0.5 font-mono text-[10px] text-fd-muted-foreground">
                   .{currentFormat.extension}
+                </span>
+                <span className="font-serif text-[10px] text-fd-muted-foreground">
+                  洛书 {currentFormat.luoshu}
                 </span>
               </div>
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Right panel: Output preview */}
-        <div className="flex-1 flex flex-col min-w-0 bg-gray-950">
+        <main className="flex min-w-0 flex-1 flex-col bg-fd-background">
           {/* Top action bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/30">
+          <div className="flex items-center justify-between border-b border-fd-border bg-fd-card px-4 py-3">
             <div className="flex items-center gap-4">
-              <h2 className="text-xs font-medium text-gray-400">
-                {currentFormat.name} Output
+              <h2 className="font-serif text-xs tracking-[0.1em] text-fd-foreground">
+                {currentFormat.name} · 输出
               </h2>
 
               {/* Tab switcher for Mermaid */}
               {selectedFormat === "mermaid" && (
-                <div className="flex items-center gap-1 bg-gray-800/50 rounded-md p-0.5">
+                <div className="flex items-center rounded-sm border border-fd-border p-px">
                   <button
                     type="button"
                     onClick={() => setActiveTab("code")}
-                    className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${
+                    className={`rounded-sm px-2 py-1 text-[10px] font-medium transition-colors ${
                       activeTab === "code"
-                        ? "bg-gray-700 text-white"
-                        : "text-gray-500 hover:text-gray-300"
+                        ? "bg-fd-muted text-fd-foreground"
+                        : "text-fd-muted-foreground hover:text-fd-foreground"
                     }`}
                   >
-                    Code
+                    代码
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab("preview")}
-                    className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${
+                    className={`rounded-sm px-2 py-1 text-[10px] font-medium transition-colors ${
                       activeTab === "preview"
-                        ? "bg-gray-700 text-white"
-                        : "text-gray-500 hover:text-gray-300"
+                        ? "bg-fd-muted text-fd-foreground"
+                        : "text-fd-muted-foreground hover:text-fd-foreground"
                     }`}
                   >
-                    Preview
+                    预览
                   </button>
                 </div>
               )}
@@ -377,66 +380,103 @@ export default function ExportsDemoPage() {
               <button
                 type="button"
                 onClick={handleCopy}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors ${
                   copied
-                    ? "bg-green-600/20 text-green-400"
-                    : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
+                    ? "border-[var(--zh-success)] text-[var(--zh-success)]"
+                    : "border-fd-border text-fd-muted-foreground hover:bg-fd-muted hover:text-fd-foreground"
                 }`}
               >
                 {copied ? (
                   <>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="h-3.5 w-3.5"
+                      focusable="false"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <title>Copied</title>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
-                    Copied
+                    已复制
                   </>
                 ) : (
                   <>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <svg
+                      className="h-3.5 w-3.5"
+                      focusable="false"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <title>Copy</title>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
                     </svg>
-                    Copy
+                    复制
                   </>
                 )}
               </button>
               <button
                 type="button"
                 onClick={handleDownload}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+                className="flex items-center gap-1.5 rounded-sm bg-fd-primary px-3 py-1.5 text-xs font-medium text-fd-primary-foreground transition-colors hover:bg-fd-primary/90"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <svg
+                  className="h-3.5 w-3.5"
+                  focusable="false"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <title>Download</title>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
                 </svg>
-                Download
+                下载
               </button>
             </div>
           </div>
 
           {/* Output content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden bg-fd-muted p-4">
             {selectedFormat === "mermaid" && activeTab === "preview" ? (
-              <div className="h-full overflow-auto bg-gray-900/20">
-                <MermaidPreview code={output} />
+              <div className="h-full overflow-auto rounded-sm border border-fd-border bg-fd-card p-4">
+                <Mermaid code={output} theme="auto" />
               </div>
             ) : (
-              <div className="h-full overflow-auto bg-gray-900/50 p-4">
+              <div className="h-full overflow-hidden rounded-sm border border-fd-border bg-fd-card">
                 <CodeBlock code={output} language={language} />
               </div>
             )}
           </div>
 
           {/* Bottom status bar */}
-          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-800 bg-gray-900/30 text-[10px] text-gray-500">
+          <footer className="flex items-center justify-between border-t border-fd-border bg-fd-card px-4 py-2 text-[10px] text-fd-muted-foreground">
             <div className="flex items-center gap-3">
-              <span>{output.split("\n").length} lines</span>
-              <span>{output.length} characters</span>
+              <span>{output.split("\n").length} 行</span>
+              <span>{output.length} 字符</span>
+              <span className="font-mono">.{currentFormat.extension}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <span>Ready to export</span>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 bg-[var(--zh-success)]" />
+              <span>就绪</span>
             </div>
-          </div>
-        </div>
+          </footer>
+        </main>
       </div>
     </div>
   );

@@ -1,153 +1,60 @@
 /**
- * Transform supply chain examples data into D3 force graph format.
+ * Transform the supply chain object model into D3 force graph format.
+ *
+ * Data is imported directly from `@ontograph/core` (packages/core/src/examples/)
+ * so the docs site always reflects the real example data — no inline copies.
  */
 
-import type { GraphNode, GraphLink } from "../components/force-graph";
+import { supplyChainObjectModel } from "@ontograph/core/examples/objects";
+import { supplyChainOntology } from "@ontograph/core/examples/supply-chain-ontology";
+import type { LocalizedText } from "@ontograph/core/types";
+import type { GraphLink, GraphNode } from "../components/force-graph";
 
-// Inline example data — mirrors src/examples/objects.ts
-// This avoids bundling the entire src/examples/ into the docs site.
+const FALLBACK_COLOR = "#999";
 
-const INSTANCES = [
-  {
-    "@id": "scm:warehouse-sh-001",
-    label: { zh: "上海浦东仓库", en: "Shanghai Pudong Warehouse" },
-    classRef: "scm:WarehouseClass",
-    propertyValues: {
-      "scm:warehouseCode": "WH-SH-001",
-      "scm:name": "上海浦东仓库",
-      "scm:capacity": 50000,
-      "scm:temperatureZone": "ambient",
-      "scm:status": "active",
-    },
-  },
-  {
-    "@id": "scm:warehouse-bj-001",
-    label: { zh: "北京大兴仓库", en: "Beijing Daxing Warehouse" },
-    classRef: "scm:WarehouseClass",
-    propertyValues: {
-      "scm:warehouseCode": "WH-BJ-001",
-      "scm:name": "北京大兴仓库",
-      "scm:capacity": 30000,
-      "scm:temperatureZone": "cold",
-      "scm:status": "active",
-    },
-  },
-  {
-    "@id": "scm:warehouse-gz-001",
-    label: { zh: "广州南沙仓库", en: "Guangzhou Nansha Warehouse" },
-    classRef: "scm:WarehouseClass",
-    propertyValues: {
-      "scm:warehouseCode": "WH-GZ-001",
-      "scm:name": "广州南沙仓库",
-      "scm:capacity": 80000,
-      "scm:temperatureZone": "ambient",
-      "scm:status": "active",
-    },
-  },
-  {
-    "@id": "scm:shipment-001",
-    label: { zh: "上海→北京运输批次", en: "Shanghai→Beijing Shipment" },
-    classRef: "scm:ShipmentClass",
-    propertyValues: {
-      "scm:shipmentId": "SHP-2026-001",
-      "scm:weight": 2500,
-      "scm:shipmentStatus": "in_transit",
-      "scm:estimatedArrival": "2026-04-08T18:00:00Z",
-    },
-  },
-  {
-    "@id": "scm:shipment-002",
-    label: { zh: "北京→广州运输批次", en: "Beijing→Guangzhou Shipment" },
-    classRef: "scm:ShipmentClass",
-    propertyValues: {
-      "scm:shipmentId": "SHP-2026-002",
-      "scm:weight": 1800,
-      "scm:shipmentStatus": "pending",
-      "scm:estimatedArrival": "2026-04-12T12:00:00Z",
-    },
-  },
-  {
-    "@id": "scm:order-001",
-    label: { zh: "采购订单 PO-2026-001", en: "Purchase Order PO-2026-001" },
-    classRef: "scm:OrderClass",
-    propertyValues: {
-      "scm:orderNumber": "PO-2026-001",
-      "scm:orderType": "purchase",
-      "scm:totalAmount": 125000,
-      "scm:currency": "CNY",
-      "scm:orderStatus": "confirmed",
-    },
-  },
-  {
-    "@id": "scm:order-002",
-    label: { zh: "销售订单 SO-2026-001", en: "Sales Order SO-2026-001" },
-    classRef: "scm:OrderClass",
-    propertyValues: {
-      "scm:orderNumber": "SO-2026-001",
-      "scm:orderType": "sales",
-      "scm:totalAmount": 98000,
-      "scm:currency": "CNY",
-      "scm:orderStatus": "processing",
-    },
-  },
-];
+function pickText(text: LocalizedText | undefined, fallback: string): string {
+  return text?.en ?? text?.zh ?? fallback;
+}
 
-const LINKS = [
-  {
-    "@id": "scm:link-ship-origin-001",
-    relationTypeRef: "scm:shippedFrom",
-    fromObjectId: "scm:shipment-001",
-    toObjectId: "scm:warehouse-sh-001",
-    label: { zh: "从上海仓发货", en: "Shipped from Shanghai" },
-  },
-  {
-    "@id": "scm:link-ship-dest-001",
-    relationTypeRef: "scm:shippedTo",
-    fromObjectId: "scm:shipment-001",
-    toObjectId: "scm:warehouse-bj-001",
-    label: { zh: "送达北京仓", en: "Delivered to Beijing" },
-  },
-  {
-    "@id": "scm:link-ship-order-001",
-    relationTypeRef: "scm:fulfillsOrder",
-    fromObjectId: "scm:shipment-001",
-    toObjectId: "scm:order-001",
-    label: { zh: "履约采购订单", en: "Fulfills purchase order" },
-    properties: { fulfillmentRatio: 0.75 },
-  },
-];
+// entityTypeRef → color from EntityType.ui.color in the ontology
+const colorByEntityType = new Map<string, string>();
+for (const type of supplyChainOntology.entityTypes) {
+  if (type.ui?.color) {
+    colorByEntityType.set(type["@id"], type.ui.color);
+  }
+}
 
-// Map classRef → color based on EntityType.ui.color from supply-chain/entities.ts
-const CLASS_COLOR_MAP: Record<string, string> = {
-  "scm:WarehouseClass": "#FF9800",
-  "scm:ShipmentClass": "#0277BD",
-  "scm:OrderClass": "#4CAF50",
-};
+const classById = new Map(
+  supplyChainObjectModel.classes.map((cls) => [cls["@id"], cls]),
+);
 
-// Map classRef → friendly group name
-const CLASS_GROUP_MAP: Record<string, string> = {
-  "scm:WarehouseClass": "Warehouse",
-  "scm:ShipmentClass": "Shipment",
-  "scm:OrderClass": "Order",
-};
+// "Warehouse Object Class" → "Warehouse" for legend/readability
+const OBJECT_CLASS_SUFFIX = / (Object Class|对象类)$/;
 
 export function getSupplyChainGraphData(): {
   nodes: GraphNode[];
   links: GraphLink[];
 } {
-  const nodes: GraphNode[] = INSTANCES.map((inst) => ({
-    id: inst["@id"],
-    label: inst.label.zh,
-    group: CLASS_GROUP_MAP[inst.classRef] ?? "Unknown",
-    color: CLASS_COLOR_MAP[inst.classRef] ?? "#999",
-    properties: inst.propertyValues,
-  }));
+  const nodes: GraphNode[] = supplyChainObjectModel.instances.map((inst) => {
+    const cls = classById.get(inst.classRef);
+    return {
+      id: inst["@id"],
+      label: pickText(inst.label, inst["@id"]),
+      group: pickText(cls?.label, inst.classRef).replace(
+        OBJECT_CLASS_SUFFIX,
+        "",
+      ),
+      color:
+        (cls && colorByEntityType.get(cls.entityTypeRef)) || FALLBACK_COLOR,
+      properties: inst.propertyValues,
+    };
+  });
 
-  const links: GraphLink[] = LINKS.map((link) => ({
+  const links: GraphLink[] = supplyChainObjectModel.links.map((link) => ({
     source: link.fromObjectId,
     target: link.toObjectId,
     type: link.relationTypeRef,
-    label: link.label.zh,
+    label: link.label ? pickText(link.label, link.relationTypeRef) : undefined,
     properties: link.properties,
   }));
 

@@ -3,6 +3,10 @@ title: Core Types
 description: Type definitions that form the foundation of the ontology model
 ---
 
+import { Mermaid } from "../../../components/mermaid";
+import { OntologyGraph } from "../../../components/ontology-graph";
+import { kindsOntology, mermaidRelationGraph } from "../../../lib/ontology-examples";
+
 All core types use JSON-LD style identifiers (`@id`, `@type`) and support multi-language labels via `LocalizedText`.
 
 ## Import
@@ -79,6 +83,16 @@ interface EntityType {
   ui?: EntityUIConfig;                    // Display configuration
 }
 ```
+
+The four `kind` values map to different node shapes and colors across the
+toolchain (Mermaid export, graph rendering, editor):
+
+<Mermaid
+  code={mermaidRelationGraph(kindsOntology)}
+  caption="entity · event · role · value nodes, plus BaseItem ← Product inheritance — rendered by MermaidExporter with showKind"
+/>
+
+<OntologyGraph ontology={kindsOntology} height={380} />
 
 ## RelationType
 

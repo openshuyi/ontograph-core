@@ -303,4 +303,15 @@ export const omsRelationTypes: RelationType[] = [
     range: "scm:SLA",
     inverse: "scm:slaAppliesTo",
   },
+  {
+    "@id": "scm:allocationForOrder",
+    "@type": "RelationType",
+    label: { zh: "分配对应订单", en: "Allocation For Order" },
+    domain: "scm:OrderAllocated",
+    range: "scm:Order",
+    description: {
+      zh: "订单分配事件对应的订单",
+      en: "Order being allocated by the allocation event",
+    },
+  },
 ];

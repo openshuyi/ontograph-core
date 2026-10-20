@@ -15,8 +15,8 @@ description: Complete module overview with import paths and key exports
 | RBAC Security | `from "@ontograph/core"` | `AccessController`, `RoleDefinition`, `PermissionCheckResult` |
 | SHACL Validation | `from "@ontograph/core"` | `SHACLShapeGenerator`, `SHACLValidator`, `exprToPropertyShape` |
 | Datasource | `from "@ontograph/core"` | `SyncEngine`, `DatasourceDefinition` |
-| OWL Export | `from "@ontograph/core"` | `OWLExporter` |
-| SHACL Export | `from "@ontograph/core"` | SHACL shapes as JSON-LD |
+| Exporters | `from "@ontograph/core"` | `OWLExporter`, `SHACLExporter`, `JsonSchemaExporter`, `MermaidExporter`, `ErDiagramExporter`, `DotExporter`, `CytoscapeExporter`, `toCytoscapeElements` — see [Exporters](/docs/core/exporters) |
+| Neo4j DDL | `from "@ontograph/core"` | `Neo4jSchemaGenerator` — see [Query Engine](/docs/core/query#neo4j-schema-generation) |
 | Code Generation | `from "@ontograph/core"` | `TypeGenerator` |
 | Rule Engine | `from "@ontograph/core"` | `RuleEngine` |
 | Versioning | `from "@ontograph/core"` | `VersionManager` |
@@ -24,7 +24,6 @@ description: Complete module overview with import paths and key exports
 | Lineage | `from "@ontograph/core"` | `LineageTracker` |
 | Validator | `from "@ontograph/core"` | `OntologyValidator` |
 | Actions | `from "@ontograph/core"` | `ActionEngine`, `ActionValidator`, `ActionAuditor` |
-| Transformer | `from "@ontograph/core"` | `OntologyTransformer` |
 
 ## Architecture
 
@@ -50,7 +49,7 @@ description: Complete module overview with import paths and key exports
 │
 ├── Standards Layer
 │   ├── validation/           — W3C SHACL generation + validation
-│   └── exporters/            — OWL 2 / JSON-LD export
+│   └── exporters/            — OWL 2 / SHACL / JSON Schema / Mermaid / ER / DOT / Cytoscape export
 │
 ├── Tooling
 │   ├── codegen/              — TypeScript type generation
@@ -69,3 +68,20 @@ description: Complete module overview with import paths and key exports
 - **Runtime dependency**: `zod` only
 - **Node.js**: >= 18.0.0
 - **TypeScript**: Strict mode, ES2017 target
+
+## Interactive Tools
+
+Prefer exploring visually? Two interactive pages are bundled with these docs:
+
+<Cards>
+  <Card
+    title="Ontology Editor"
+    description="Build entities, relations and constraints on a live graph, then export TypeScript / Mermaid / OWL / SHACL"
+    href="/editor"
+  />
+  <Card
+    title="Export Demo"
+    description="See one ontology rendered as OWL, SHACL, JSON Schema, Mermaid, DOT and Neo4j Cypher"
+    href="/exports-demo"
+  />
+</Cards>

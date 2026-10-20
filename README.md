@@ -24,6 +24,13 @@
 Inspired by [Palantir Ontology](https://docs.palantir.com/foundry/ontology/), built for the open-source world.
 **Single runtime dependency: [`zod`](https://github.com/colinhacks/zod)**
 
+<div align="center">
+  <img src="docs/public/images/ontograph-editor.webp" width="900" alt="Ontograph Editor — the supply chain ontology (176 entities, 472 relations, 33 constraints) rendered as an interactive force-directed graph" />
+  <div>
+    <sub><b>Ontograph Editor</b> — the supply chain reference ontology as a live graph: 176 entities · 472 relations · 33 constraints, with entity inspector, layout/physics controls and PNG export</sub>
+  </div>
+</div>
+
 ---
 
 ## ✨ 10-Second Wow

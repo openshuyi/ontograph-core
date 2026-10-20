@@ -16,7 +16,9 @@
     "incremental": true,
     "paths": {
       "@/*": ["./*"],
-      "collections/*": ["./.source/*"]
+      "collections/*": ["./.source/*"],
+      "@ontograph/core": ["../src/index.ts"],
+      "@ontograph/core/*": ["../src/*.ts"]
     },
     "plugins": [
       {

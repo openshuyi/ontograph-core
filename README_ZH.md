@@ -24,6 +24,13 @@
 灵感源自 [Palantir Ontology](https://docs.palantir.com/foundry/ontology/)，为开源世界而生。
 **唯一运行时依赖：[zod](https://github.com/colinhacks/zod)**
 
+<div align="center">
+  <img src="docs/public/images/ontograph-editor.webp" width="900" alt="Ontograph Editor — 供应链本体（176 个实体、472 条关系、33 条约束）以交互式力导向图呈现" />
+  <div>
+    <sub><b>Ontograph Editor</b> — 供应链参考本体以实时图谱呈现：176 个实体 · 472 条关系 · 33 条约束，支持实体详情面板、布局/物理参数调节与 PNG 导出</sub>
+  </div>
+</div>
+
 ---
 
 ## ✨ 10-Second Wow

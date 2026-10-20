@@ -261,6 +261,17 @@ export const relationTypes: RelationType[] = [
     domain: "scm:Route",
     range: "scm:Port",
   },
+  {
+    "@id": "scm:shipmentForOrder",
+    "@type": "RelationType",
+    label: { zh: "货运对应订单", en: "Shipment For Order" },
+    domain: "scm:Shipment",
+    range: "scm:Order",
+    description: {
+      zh: "通用货运抽象对应的业务订单",
+      en: "Business order fulfilled by the generic shipment",
+    },
+  },
 
   // ========== 产品与库存 (Product & Inventory) ==========
   {
@@ -360,6 +371,17 @@ export const relationTypes: RelationType[] = [
     domain: "scm:WarehouseOperator",
     range: "scm:Warehouse",
     inverse: "scm:hasAssignee",
+  },
+  {
+    "@id": "scm:userOfOrganization",
+    "@type": "RelationType",
+    label: { zh: "用户属于组织", en: "User Of Organization" },
+    domain: "scm:User",
+    range: "scm:Organization",
+    description: {
+      zh: "系统用户/操作人员所属的组织",
+      en: "Organization the system user or operator belongs to",
+    },
   },
 
   // ========== 发票与结算 (Invoice & Settlement) ==========
@@ -530,6 +552,41 @@ export const relationTypes: RelationType[] = [
     label: { zh: "由承运商签发", en: "Issued By Carrier" },
     domain: "scm:BillOfLading",
     range: "scm:Carrier",
+  },
+  {
+    "@id": "scm:inspectionConductedBy",
+    "@type": "RelationType",
+    label: { zh: "由质检员执行", en: "Inspection Conducted By" },
+    domain: "scm:QualityInspection",
+    range: "scm:QualityInspectorPerson",
+    inverse: "scm:conductsInspection",
+    description: {
+      zh: "执行质量检验的质检员",
+      en: "Quality inspector person who performed the inspection",
+    },
+  },
+  {
+    "@id": "scm:conductsInspection",
+    "@type": "RelationType",
+    label: { zh: "执行检验", en: "Conducts Inspection" },
+    domain: "scm:QualityInspectorPerson",
+    range: "scm:QualityInspection",
+    inverse: "scm:inspectionConductedBy",
+    description: {
+      zh: "质检员执行的质量检验",
+      en: "Quality inspection conducted by the inspector person",
+    },
+  },
+  {
+    "@id": "scm:resolvesAlert",
+    "@type": "RelationType",
+    label: { zh: "解决告警", en: "Resolves Alert" },
+    domain: "scm:ResolutionAction",
+    range: "scm:DelayAlert",
+    description: {
+      zh: "解决行动处理的延误告警",
+      en: "Delay alert handled by the resolution action",
+    },
   },
 
   // ========== 跨系统流程连接 (Cross-System Flow) ==========
@@ -1100,6 +1157,41 @@ export const relationTypes: RelationType[] = [
     description: {
       zh: "转化事件的输出产品数量",
       en: "Output product quantity in transformation event",
+    },
+  },
+
+  // ========== EPCIS 事件业务关联 (EPCIS Event Business Links) ==========
+  {
+    "@id": "scm:aggregatesProduct",
+    "@type": "RelationType",
+    label: { zh: "聚合产品", en: "Aggregates Product" },
+    domain: "scm:AggregationEvent",
+    range: "scm:Product",
+    description: {
+      zh: "聚合事件组装/拆解的产品对象",
+      en: "Product objects assembled or disassembled by the aggregation event",
+    },
+  },
+  {
+    "@id": "scm:transactionForOrder",
+    "@type": "RelationType",
+    label: { zh: "交易对应订单", en: "Transaction For Order" },
+    domain: "scm:TransactionEvent",
+    range: "scm:Order",
+    description: {
+      zh: "交易事件关联的业务订单",
+      en: "Business order associated with the transaction event",
+    },
+  },
+  {
+    "@id": "scm:associatesShipment",
+    "@type": "RelationType",
+    label: { zh: "关联货运", en: "Associates Shipment" },
+    domain: "scm:AssociationEvent",
+    range: "scm:Shipment",
+    description: {
+      zh: "关联事件绑定的货运对象（如传感器绑定到货物）",
+      en: "Shipment object bound by the association event (e.g., sensor attached to cargo)",
     },
   },
 

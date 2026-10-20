@@ -1,11 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+import type React from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
 import {
-  type OntologyEditorState,
   type EditorAction,
-  INITIAL_STATE,
   editorReducer,
+  INITIAL_STATE,
+  type OntologyEditorState,
 } from "./editor-types";
 
 interface EditorContextType {
@@ -15,7 +16,10 @@ interface EditorContextType {
 
 const EditorContext = createContext<EditorContextType | null>(null);
 
-const STORAGE_KEY = "ontograph-editor-state";
+// Bumped when INITIAL_STATE's data source changes shape, so stale snapshots
+// from earlier visits don't shadow the new initial data.
+// v3: supply chain example ontology gained relations for previously isolated types
+const STORAGE_KEY = "ontograph-editor-state-v3";
 
 function loadState(): OntologyEditorState {
   try {

@@ -11,7 +11,12 @@ export const omsEventTypes: EntityType[] = [
       { ref: "scm:orderNo" },
       { ref: "scm:allocationStrategy" },
     ],
-    relations: [{ ref: "scm:allocatesInventory" }, { ref: "scm:forOrder" }, { ref: "scm:atLocation" }],
+    relations: [
+      { ref: "scm:allocatesInventory" },
+      { ref: "scm:forOrder" },
+      { ref: "scm:atLocation" },
+      { ref: "scm:allocationForOrder" },
+    ],
     constraints: [],
     ui: { color: "#FF5252", icon: "event", group: "oms" },
   },

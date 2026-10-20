@@ -1,7 +1,7 @@
 "use client";
 
 import * as d3 from "d3";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Node and Link type definitions
 export interface GraphNode {
@@ -48,7 +48,11 @@ interface TooltipState {
   content: string;
 }
 
-export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps) {
+export function ForceGraphDemo({
+  nodes,
+  links,
+  className,
+}: ForceGraphDemoProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -59,7 +63,9 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
     y: 0,
     content: "",
   });
-  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
+  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(
+    null,
+  );
 
   // Get unique groups for legend
   const groups = [...new Set(nodes.map((n) => n.group))].map((group) => {
@@ -70,7 +76,7 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
   // Handle resize
   useEffect(() => {
     setMounted(true);
-    
+
     const updateDimensions = () => {
       if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
@@ -82,7 +88,7 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
     };
 
     updateDimensions();
-    
+
     const resizeObserver = new ResizeObserver(updateDimensions);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
@@ -105,46 +111,14 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
     const g = svg.append("g").attr("class", "graph-container");
 
     // Setup zoom
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
       .on("zoom", (event) => {
         g.attr("transform", event.transform.toString());
       });
 
     svg.call(zoom);
-
-    // Create defs for glow effect
-    const defs = svg.append("defs");
-    
-    // Add glow filter for each unique color
-    const uniqueColors = [...new Set(nodes.map(n => n.color))];
-    uniqueColors.forEach((color, i) => {
-      const filter = defs.append("filter")
-        .attr("id", `glow-${i}`)
-        .attr("x", "-50%")
-        .attr("y", "-50%")
-        .attr("width", "200%")
-        .attr("height", "200%");
-      
-      filter.append("feGaussianBlur")
-        .attr("stdDeviation", "3")
-        .attr("result", `blur-${i}`);
-      
-      filter.append("feFlood")
-        .attr("flood-color", color)
-        .attr("flood-opacity", "0.5")
-        .attr("result", `color-${i}`);
-      
-      filter.append("feComposite")
-        .attr("in", `color-${i}`)
-        .attr("in2", `blur-${i}`)
-        .attr("operator", "in")
-        .attr("result", `shadow-${i}`);
-      
-      const merge = filter.append("feMerge");
-      merge.append("feMergeNode").attr("in", `shadow-${i}`);
-      merge.append("feMergeNode").attr("in", "SourceGraphic");
-    });
 
     // Prepare data - create copies to avoid mutating original
     const simulationNodes: GraphNode[] = nodes.map((n, i) => ({
@@ -156,40 +130,45 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
 
     const simulationLinks: GraphLink[] = links.map((l, i) => ({
       ...l,
-      source: typeof l.source === "string" 
-        ? simulationNodes.find(n => n.id === l.source) || simulationNodes[0] 
-        : l.source,
-      target: typeof l.target === "string" 
-        ? simulationNodes.find(n => n.id === l.target) || simulationNodes[0] 
-        : l.target,
+      source:
+        typeof l.source === "string"
+          ? simulationNodes.find((n) => n.id === l.source) || simulationNodes[0]
+          : l.source,
+      target:
+        typeof l.target === "string"
+          ? simulationNodes.find((n) => n.id === l.target) || simulationNodes[0]
+          : l.target,
       index: i,
     }));
 
     // Create links
-    const linkGroup = g.append("g")
+    const linkGroup = g
+      .append("g")
       .attr("class", "links")
       .selectAll("line")
       .data(simulationLinks)
       .join("line")
-      .attr("stroke", "#999")
+      .style("stroke", "var(--color-fd-muted-foreground)")
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", 2);
 
     // Link labels (optional)
-    const linkLabels = g.append("g")
+    const linkLabels = g
+      .append("g")
       .attr("class", "link-labels")
       .selectAll("text")
-      .data(simulationLinks.filter(l => l.label))
+      .data(simulationLinks.filter((l) => l.label))
       .join("text")
       .attr("class", "link-label")
       .attr("font-size", "10px")
-      .attr("fill", "#888")
+      .style("fill", "var(--color-fd-muted-foreground)")
       .attr("text-anchor", "middle")
       .attr("dy", -5)
-      .text(d => d.label || "");
+      .text((d) => d.label || "");
 
     // Create nodes group
-    const nodeGroup = g.append("g")
+    const nodeGroup = g
+      .append("g")
       .attr("class", "nodes")
       .selectAll("g.node")
       .data(simulationNodes)
@@ -197,32 +176,28 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
       .attr("class", "node")
       .style("cursor", "grab");
 
-    // Find the glow filter index for each node
-    const getGlowFilterId = (color: string) => {
-      const idx = uniqueColors.indexOf(color);
-      return `glow-${idx}`;
-    };
-
     // Node circles
-    nodeGroup.append("circle")
+    nodeGroup
+      .append("circle")
       .attr("r", 20)
       .attr("fill", (d) => d.color)
-      .attr("stroke", "#fff")
+      .style("stroke", "var(--color-fd-card-foreground)")
       .attr("stroke-width", 2)
-      .attr("stroke-opacity", 0.8)
-      .style("filter", (d) => `url(#${getGlowFilterId(d.color)})`);
+      .attr("stroke-opacity", 0.8);
 
     // Node labels
-    nodeGroup.append("text")
+    nodeGroup
+      .append("text")
       .attr("class", "node-label")
       .attr("dy", 35)
       .attr("text-anchor", "middle")
       .attr("font-size", "12px")
-      .attr("fill", "#e0e0e0")
+      .style("fill", "var(--color-fd-foreground)")
       .attr("font-weight", "500")
       .text((d) => d.label);
 
-    const dragHandler = d3.drag<SVGGElement, GraphNode>()
+    const dragHandler = d3
+      .drag<SVGGElement, GraphNode>()
       .on("start", (event, d) => {
         if (!event.active) simulationRef.current?.alphaTarget(0.3).restart();
         d.fx = d.x;
@@ -237,22 +212,22 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
         d.fx = null;
         d.fy = null;
       });
-    
-    (nodeGroup as d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown>).call(dragHandler);
+
+    (
+      nodeGroup as d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown>
+    ).call(dragHandler);
 
     // Tooltip handlers
     nodeGroup
       .on("mouseover", (event, d) => {
-        const propsText = d.properties 
+        const propsText = d.properties
           ? Object.entries(d.properties)
               .map(([key, value]) => `${key}: ${String(value)}`)
               .join("\n")
           : "";
-        
-        const content = propsText 
-          ? `${d.label}\n${propsText}` 
-          : d.label;
-        
+
+        const content = propsText ? `${d.label}\n${propsText}` : d.label;
+
         setTooltip({
           visible: true,
           x: event.clientX,
@@ -272,11 +247,16 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
       });
 
     // Create force simulation
-    const simulation = d3.forceSimulation<GraphNode>(simulationNodes)
-      .force("link", d3.forceLink<GraphNode, GraphLink>(simulationLinks)
-        .id((d) => d.id)
-        .distance(100)
-        .strength(0.5))
+    const simulation = d3
+      .forceSimulation<GraphNode>(simulationNodes)
+      .force(
+        "link",
+        d3
+          .forceLink<GraphNode, GraphLink>(simulationLinks)
+          .id((d) => d.id)
+          .distance(100)
+          .strength(0.5),
+      )
       .force("charge", d3.forceManyBody().strength(-200))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collide", d3.forceCollide().radius(30));
@@ -322,21 +302,20 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
 
   if (!mounted) {
     return (
-      <div 
-        className={className}
-        style={{ minHeight: 600, minWidth: 800 }}
-      >
-        <div className="flex items-center justify-center h-full bg-[#1a1a2e] rounded-lg">
-          <div className="text-gray-400 animate-pulse">Loading graph...</div>
+      <div className={className} style={{ minHeight: 600, minWidth: 800 }}>
+        <div className="flex items-center justify-center h-full bg-[var(--color-fd-background)] rounded-sm">
+          <div className="text-fd-muted-foreground animate-pulse">
+            Loading graph...
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className={`relative bg-[#1a1a2e] rounded-lg overflow-hidden ${className || ""}`}
+      className={`relative bg-[var(--color-fd-background)] rounded-sm overflow-hidden ${className || ""}`}
       style={{ minHeight: 600, minWidth: 800 }}
     >
       {/* SVG Canvas */}
@@ -352,25 +331,23 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
       <button
         type="button"
         onClick={handleReheat}
-        className="absolute top-4 right-4 px-4 py-2 bg-[#2a2a4e] hover:bg-[#3a3a6e] 
-                   text-gray-200 rounded-lg border border-gray-600 
-                   transition-all duration-200 shadow-lg
-                   hover:shadow-xl hover:border-gray-500
-                   active:scale-95"
+        className="absolute top-4 right-4 px-4 py-2 bg-fd-card hover:bg-fd-accent 
+                   text-fd-foreground rounded-sm border border-fd-border 
+                   transition-colors active:scale-95"
       >
         <span className="flex items-center gap-2">
-          <svg 
-            className="w-4 h-4" 
-            fill="none" 
-            viewBox="0 0 24 24" 
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
             stroke="currentColor"
             aria-label="Reheat icon"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M13 10V3L4 14h7v7l9-11h-7z" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
             />
           </svg>
           Reheat
@@ -378,19 +355,18 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
       </button>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-[#2a2a4e]/90 backdrop-blur-sm rounded-lg p-3 border border-gray-600">
-        <div className="text-xs text-gray-400 mb-2 font-medium">Legend</div>
+      <div className="absolute bottom-4 left-4 bg-fd-popover/90 rounded-sm p-3 border border-fd-border">
+        <div className="text-xs text-fd-muted-foreground mb-2 font-medium">
+          Legend
+        </div>
         <div className="flex flex-col gap-2">
           {groups.map(({ group, color }) => (
             <div key={group} className="flex items-center gap-2">
-              <div 
-                className="w-4 h-4 rounded-full shadow-sm"
-                style={{ 
-                  backgroundColor: color,
-                  boxShadow: `0 0 8px ${color}40`
-                }}
+              <div
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: color }}
               />
-              <span className="text-sm text-gray-300">{group}</span>
+              <span className="text-sm text-fd-foreground">{group}</span>
             </div>
           ))}
         </div>
@@ -399,8 +375,8 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
       {/* Tooltip */}
       {tooltip.visible && (
         <div
-          className="fixed z-50 bg-[#2a2a4e]/95 backdrop-blur-sm rounded-lg p-3 
-                     border border-gray-500 shadow-xl pointer-events-none
+          className="fixed z-50 bg-fd-popover/95 rounded-sm p-3 
+                     border border-fd-border pointer-events-none
                      max-w-xs whitespace-pre-wrap"
           style={{
             left: tooltip.x,
@@ -408,7 +384,7 @@ export function ForceGraphDemo({ nodes, links, className }: ForceGraphDemoProps)
             transform: "translate(-50%, -100%)",
           }}
         >
-          <div className="text-sm text-gray-100 font-medium whitespace-pre-wrap">
+          <div className="text-sm text-fd-popover-foreground font-medium whitespace-pre-wrap">
             {tooltip.content}
           </div>
         </div>
