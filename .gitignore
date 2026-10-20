@@ -9,3 +9,4 @@ dist/
 docs/.next/
 docs/.source/
 release.sh
+.omo
