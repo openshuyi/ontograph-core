@@ -1,5 +1,8 @@
 name: Release
 
+# Versioned release: pushing a `v*` tag publishes the package as `latest`.
+# The tag must match package.json version exactly (e.g. tag v0.1.0 ↔ version 0.1.0).
+
 on:
   push:
     tags: ["v*"]
@@ -13,6 +16,8 @@ env:
 
 jobs:
   publish-npm:
+    # Forks have no NPM_TOKEN; never attempt to publish there.
+    if: github.repository == 'openshuyi/ontograph-core'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,9 +26,21 @@ jobs:
         with:
           bun-version: latest
 
-      - run: bun install
+      - run: bun install --frozen-lockfile
+
+      - run: bun run typecheck
+
+      - run: bun run lint
+
+      - run: bun run test
 
       - run: bun run build
+
+      - name: Verify dist output
+        run: test -d dist && echo "dist/ produced successfully" || (echo "dist/ missing" && exit 1)
+
+      - name: Verify tag matches package.json version
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
 
       - uses: actions/setup-node@v4
         with:

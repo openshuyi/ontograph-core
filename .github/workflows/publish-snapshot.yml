@@ -1,0 +1,70 @@
+name: Publish Snapshot
+
+# Every commit pushed to main publishes an immutable prerelease snapshot:
+#   @ontograph/core@<next-patch>-snapshot.<YYYYMMDD>.<short-sha>  →  dist-tag `snapshot`
+# Versioned releases still go through release.yml on `v*` tags (dist-tag `latest`).
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+# Only the newest main commit should publish; drop superseded runs instead of queueing them.
+concurrency:
+  group: publish-snapshot
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  publish-snapshot:
+    # Forks have no NPM_TOKEN; never attempt to publish there.
+    if: github.repository == 'openshuyi/ontograph-core'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run typecheck
+
+      - run: bun run lint
+
+      - run: bun run test
+
+      - run: bun run build
+
+      - name: Verify dist output
+        run: test -d dist && echo "dist/ produced successfully" || (echo "dist/ missing" && exit 1)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+
+      - name: Compute snapshot version
+        id: version
+        run: |
+          BASE="$(node -p "require('./package.json').version")"
+          CLEAN="${BASE%%-*}" # strip any existing prerelease suffix
+          # Snapshot of the upcoming patch release: 0.0.1 -> 0.0.2-snapshot...
+          NEXT="$(node -p "const [ma,mi,pa]=process.argv[1].split('.').map(Number); [ma,mi,pa+1].join('.')" "$CLEAN")"
+          SHA="$(git rev-parse --short=7 HEAD)"
+          DATE="$(date +%Y%m%d)"
+          echo "snapshot=${NEXT}-snapshot.${DATE}.${SHA}" >> "$GITHUB_OUTPUT"
+          echo "Publishing snapshot ${{ github.sha }} as ${NEXT}-snapshot.${DATE}.${SHA}"
+
+      - name: Publish snapshot to npm
+        run: |
+          npm version "${{ steps.version.outputs.snapshot }}" --no-git-tag-version --allow-same-version
+          npm publish --provenance --access public --no-git-checks --tag snapshot
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
